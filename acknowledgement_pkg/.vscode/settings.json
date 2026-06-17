@@ -1,0 +1,16 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/cap-csci/ros2_ws/install/yolo_ros/lib/python3.12/site-packages",
+        "/home/cap-csci/ros2_ws/install/yolo_msgs/lib/python3.12/site-packages",
+        "/home/cap-csci/ros2_ws/install/sound_pkg/lib/python3.12/site-packages",
+        "/home/cap-csci/summerRS25_ws/install/SRS251_pkg/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/cap-csci/ros2_ws/install/yolo_ros/lib/python3.12/site-packages",
+        "/home/cap-csci/ros2_ws/install/yolo_msgs/lib/python3.12/site-packages",
+        "/home/cap-csci/ros2_ws/install/sound_pkg/lib/python3.12/site-packages",
+        "/home/cap-csci/summerRS25_ws/install/SRS251_pkg/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ]
+}
