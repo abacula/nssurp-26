@@ -14,11 +14,10 @@ from tf_transformations import euler_from_quaternion
 class RunAway(Node):
     def __init__(self):
 
-        self.follow = True # Delay before turning around
         self.saw_person = False
         self.obstacle_detected = False
         self.turning = False
-        self.STOP_DIST = 0.0 # Meters
+        self.STOP_DIST = 0.3 # Meters
         self.FORWARD_SPD = 0.5
         self.angle_goal = 0
         self.x = 0
@@ -42,9 +41,6 @@ class RunAway(Node):
     def hallway_cb(self, msg):
 
         if msg.person_detected and msg.bbox_height > 70 and not self.saw_person:
-            if self.follow:
-                time.sleep(5)
-                self.follow = False
             self.saw_person = True
             self.turning = True
             self.angle_goal = self.ang + 3.14
@@ -53,7 +49,7 @@ class RunAway(Node):
     
     def scan_callback(self, msg):
 
-        for distance in msg.ranges[200:340]:
+        for distance in msg.ranges[240:300]:
             if msg.range_min < distance < msg.range_max:
                 if distance < self.STOP_DIST:
                     self.obstacle_detected = True
@@ -70,21 +66,25 @@ class RunAway(Node):
     def loop(self):
 
         twist = Twist()
-        if not self.saw_person:
+        if not self.saw_person and not self.obstacle_detected:
             twist.linear.x = self.FORWARD_SPD
             #self.get_logger().info("Nobody")
 
-        elif not self.obstacle_detected and not self.follow:
+        elif not self.obstacle_detected:
             if self.turning:
                 turn_speed = 0.0
                 if abs(self.angle_goal - self.ang) < 0.01:
                     self.turning = False
+                    #self.get_logger().info("Turned")
                 else:
-                    turn_speed = (self.angle_goal - self.ang) ** 2
-                    if turn_speed > 2.0:
-                        turn_speed = 2.0
-                    if turn_speed < 0.1:
-                        turn_speed = 0.1
+                    turn_speed = (self.angle_goal - self.ang)
+                if 2 > turn_speed > 1:
+                    turn_speed **= 2
+                elif 2 > turn_speed > 0.01:
+                    turn_speed *= 2
+                elif turn_speed < 0.01:
+                    turn_speed = 0.01
+                    
 
                 twist.linear.x = 0.0
                 twist.angular.z = turn_speed

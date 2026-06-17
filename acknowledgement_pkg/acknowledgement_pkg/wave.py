@@ -41,7 +41,7 @@ class Wave(Node):
         twist.linear.x = 0.0
         
         # Turn left
-        twist.angular.z = 1
+        twist.angular.z = 1.0
         self.publisher.publish(twist)
         time.sleep(0.5)
 
@@ -64,13 +64,14 @@ class Wave(Node):
         time.sleep(0.5)
 
         # Turn right
-        twist.angular.z = 1
+        twist.angular.z = -0.5
         self.publisher.publish(twist)
         time.sleep(0.5)
         
         twist.angular.z = 0.0
         self.publisher.publish(twist)
 
+        time.sleep(1.0)
         self.waving = False
 
     def loop(self):
