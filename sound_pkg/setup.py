@@ -22,6 +22,7 @@ setup(
         'console_scripts': [ 'beep_node = sound_pkg.sound_test:main',
                             'battery_alarm_node = sound_pkg.battery_alarm:main',
                             'detection_chime_node = sound_pkg.detection_chime:main',
+                            'kill_sound = sound_pkg.kill_sound:main',
         ],
     },
 )
