@@ -11,8 +11,8 @@ class SlowdownMovement(Node):
         super().__init__('slowdown_node')
 
         self.FORWARD_SPD = 0.5          # m/s
-        self.CONF_THRESH = 0.75
-        self.TRIGGER_HEIGHT = 60        
+        self.CONF_THRESH = 0.75         # min confidence
+        self.TRIGGER_HEIGHT = 60        # bbox_height that starts the slowdown
         self.SOUND = True               # do we want sounds
 
         self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
@@ -25,8 +25,7 @@ class SlowdownMovement(Node):
                 and msg.confidence >= self.CONF_THRESH
                 and msg.bbox_height > self.TRIGGER_HEIGHT):
             self.get_logger().info("Person detected -- slowing down.")
-            twist.linear.x = 0.0
-            # twist.linear.x = self.get_speed(msg.bbox_height)
+            twist.linear.x = self.get_speed(msg.bbox_height)
             if msg.bbox_height > 230:
                 twist.linear.x = 0.0
 
@@ -48,8 +47,13 @@ class SlowdownMovement(Node):
 
                 audio_msg.append = True
                 audio_msg.notes.append(note)
-            self.sound_pub.publish(audio_msg)
-
+                
+        else:
+            audio_msg = AudioNoteVector()
+            audio_msg.append = False
+            self.get_logger().info("Sound Killed.")
+            
+        self.sound_pub.publish(audio_msg)
         self.publisher.publish(twist)
 
     def get_speed(self, box_height, max_speed = 0.5, min_speed=0.05):
