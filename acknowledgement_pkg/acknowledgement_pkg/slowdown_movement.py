@@ -24,19 +24,19 @@ class SlowdownMovement(Node):
         if (msg.person_detected
                 and msg.confidence >= self.CONF_THRESH
                 and msg.bbox_height > self.TRIGGER_HEIGHT):
-            self.get_logger().info("Person detected -- slowing down.87123876")
+            self.get_logger().info("Person detected -- slowing down.")
             twist.linear.x = 0.0
             # twist.linear.x = self.get_speed(msg.bbox_height)
             if msg.bbox_height > 230:
                 twist.linear.x = 0.0
 
         else:
-            self.get_logger().info("No person detected -- keep moving123123123")
+            self.get_logger().info("No person detected -- keep moving.")
             twist.linear.x = self.FORWARD_SPD
 
         if self.SOUND and twist.linear.x < self.FORWARD_SPD:
             audio_msg = AudioNoteVector()
-            Melody = [440, 349, 440, 349]
+            Melody = [880,698]
             for freq in Melody:
                 self.get_logger().info("singing")
                 note = AudioNote()           

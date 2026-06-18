@@ -2,7 +2,8 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from yolo_msgs.msg import HallwayAck
-
+from irobot_create_msgs.msg import AudioNote, AudioNoteVector
+from builtin_interfaces.msg import Duration
 
 class DodgeNode(Node):
     # phases
@@ -16,6 +17,7 @@ class DodgeNode(Node):
         self.FORWARD_SPD = 0.5          # m/s
         self.TURN_RATE = 0.5            # rad/s
         self.ARC_DURATION = 2.5         # s, time spent in EACH arc
+        self.WANT_SOUNDS = True         # do we want sounds
 
         self.CONF_THRESH = 0.70
         self.TRIGGER_HEIGHT = 74        # bbox_height that starts the dodge
@@ -30,8 +32,23 @@ class DodgeNode(Node):
         self.timer = self.create_timer(0.1, self.control_loop)
 
     def hallway_cb(self, msg):
-        # ignore detections once a dodge is already underway
+        # ignore detections and play sounds once a dodge is already underway
         if self.phase != self.STRAIGHT:
+            if self.WANT_SOUNDS:
+                audio_msg = AudioNoteVector()
+                Melody = [880,698]
+                for freq in Melody:
+                    self.get_logger().info("singing")
+                    note = AudioNote()           
+                    time_play = Duration()
+
+                    time_play.nanosec = 1000000000 # 1 second(s)
+                    note.max_runtime = time_play
+                    note.frequency = freq
+
+                    audio_msg.append = True
+                    audio_msg.notes.append(note)
+                self.sound_pub.publish(audio_msg)
             return
 
         if (msg.person_detected
