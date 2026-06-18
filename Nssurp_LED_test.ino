@@ -34,7 +34,6 @@ CRGB leds[NUM_LEDS];
 void setup() { 
  
   Serial.begin(115200);
-  Serial.println("Starting up...");
 
   // Set up LEDs
   FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
@@ -62,7 +61,7 @@ void loop() {
   //spin(10, 171, 0, 50); // Needs a range to spin, color that is spun, a background color, and a speed
   //pulse(85, 2, 1, 255, 100); // Needs a color to pulse, rate to change, time to wait, max brightness, and min brightness
   //fade(85, 5, 10); // Needs a color to fade, a rate to fade at, and a time to wait
-  fadeTo(0, 255, 5, 100); // Needs two colors to fade between, a speed to fade at, and a time to wait
+  //fadeTo(0, 255, 5, 100); // Needs two colors to fade between, a speed to fade at, and a time to wait
   //turn(42, false, 500); // Needs a turn color, a direction boolean, and a blink time
 
 //  Terminal output
@@ -70,6 +69,16 @@ void loop() {
 //    Serial.println(color);
 //    Serial.println(color);
 //    Serial.println(wait);
+    if(Serial.available() > 0){
+      String piData = Serial.readStringUntil('\n');
+      if (piData.length() > 0){
+        instant(171);
+      }
+    }
+    else {
+      instant(10);
+    }
+
     FastLED.show();
     delay(10);
 }

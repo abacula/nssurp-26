@@ -3,6 +3,8 @@ import time
 from rclpy.node import Node
 from yolo_msgs.msg import HallwayAck
 from geometry_msgs.msg import Twist
+from irobot_create_msgs.msg import AudioNote, AudioNoteVector
+from builtin_interfaces.msg import Duration
 
 # Any additional imports here
 
@@ -20,6 +22,7 @@ class Wave(Node):
         self.has_seen = False
 
         self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
+        self.sound_pub = self.create_publisher(AudioNoteVector, "/robot4/cmd_audio", 2)
         self.ack_sub = self.create_subscription(HallwayAck, '/robot4/hallway_ack', self.hallway_cb, 10)
 
         self.timer = self.create_timer(0.1, self.loop)
@@ -44,6 +47,10 @@ class Wave(Node):
         twist.angular.z = 1.0
         self.publisher.publish(twist)
         time.sleep(0.5)
+        
+        twist.angular.z = 0.0
+        self.publisher.publish(twist)
+        self.changeSound(True)
 
         # Wave left
         twist.angular.z = 0.5
@@ -71,8 +78,33 @@ class Wave(Node):
         twist.angular.z = 0.0
         self.publisher.publish(twist)
 
-        time.sleep(1.0)
+        time.sleep(0.5)
         self.waving = False
+
+    def changeSound(self, on):
+        if on:
+            audio_msg = AudioNoteVector()
+            Melody = [1174, 1318, 1568, 1174]
+            Durations = [.2, .2, .4, .2]
+            #Melody = [1396, 1318, 1396, 1318]
+            #Durations = [.2, .2, .2, .2]
+            #Melody = [1318, 1568, 1760, 1396]
+            #Durations = [.2, .2, .2, .2]
+            #Melody = [1318, 1568, 1760, 1568, 1396]
+            #Durations = [.2, .2, .2, .2, .2]
+            #Melody = [0]
+            #Durations = [0.0]
+            for x in range(len(Melody)):
+                note = AudioNote()           
+                time_play = Duration()
+    
+                time_play.nanosec = int(Durations[x] * 1000000000) # val * 1 second
+                note.max_runtime = time_play
+                note.frequency = Melody[x]
+
+                audio_msg.append = True
+                audio_msg.notes.append(note)
+            self.sound_pub.publish(audio_msg)
 
     def loop(self):
         
