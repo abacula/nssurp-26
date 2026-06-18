@@ -38,7 +38,6 @@ class SlowdownMovement(Node):
             audio_msg = AudioNoteVector()
             Melody = [880,698]
             for freq in Melody:
-                self.get_logger().info("singing")
                 note = AudioNote()           
                 time_play = Duration()
     
