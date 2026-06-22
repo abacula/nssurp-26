@@ -4,6 +4,7 @@ from geometry_msgs.msg import Twist
 from yolo_msgs.msg import HallwayAck
 from irobot_create_msgs.msg import AudioNote, AudioNoteVector
 from builtin_interfaces.msg import Duration
+from std_msgs.msg import String
 
 class DodgeNode(Node):
     # phases
@@ -14,10 +15,12 @@ class DodgeNode(Node):
     def __init__(self):
         super().__init__('dodge_node')
 
+        self.SOUNDS = True         # do we want sounds
+        self.LIGHTS = False        # do we want lights (not implemented yet)
+
         self.FORWARD_SPD = 0.5          # m/s
         self.TURN_RATE = 0.5            # rad/s
         self.ARC_DURATION = 2.5         # s, time spent in EACH arc
-        self.WANT_SOUNDS = True         # do we want sounds
 
         self.CONF_THRESH = 0.70
         self.TRIGGER_HEIGHT = 74        # bbox_height that starts the dodge
@@ -28,13 +31,15 @@ class DodgeNode(Node):
 
         self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
         self.ack_sub = self.create_subscription(HallwayAck, '/robot4/hallway_ack', self.hallway_cb, 10)
+        self.sound_pub = self.create_publisher(AudioNoteVector, "/robot4/cmd_audio", 2)
+        self.light_pub = self.create_publisher(String, "/light_state", 10)
         
         self.timer = self.create_timer(0.1, self.control_loop)
 
     def hallway_cb(self, msg):
         # ignore detections and play sounds once a dodge is already underway
         if self.phase != self.STRAIGHT:
-            if self.WANT_SOUNDS:
+            if self.SOUNDS:
                 audio_msg = AudioNoteVector()
                 Melody = [880,698]
                 for freq in Melody:
@@ -48,7 +53,16 @@ class DodgeNode(Node):
                     audio_msg.append = True
                     audio_msg.notes.append(note)
                 self.sound_pub.publish(audio_msg)
+            
+            if self.LIGHTS:
+                light_msg = String()
+                light_msg.data = "something"
             return
+        else:
+            audio_msg = AudioNoteVector()
+            audio_msg.append = False
+            self.sound_pub.publish(audio_msg)
+            self.get_logger().info("Sound Killed.")
 
         if (msg.person_detected
                 and msg.confidence >= self.CONF_THRESH
@@ -63,7 +77,7 @@ class DodgeNode(Node):
         # right arc done; now arc back left by the same amount to straighten out
         self.get_logger().info("Arcing back left.")
         self.phase = self.ARC_LEFT
-        self._reset_timer(self.finish_dodge, 2 * self.ARC_DURATION)
+        self._reset_timer(self.finish_dodge, 1.25 * self.ARC_DURATION)
 
     def finish_dodge(self):
         self.get_logger().info("Dodge complete -- driving straight down the hallway.")

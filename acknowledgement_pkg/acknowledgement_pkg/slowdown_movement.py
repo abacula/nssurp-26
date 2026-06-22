@@ -4,20 +4,24 @@ from geometry_msgs.msg import Twist
 from yolo_msgs.msg import HallwayAck
 from irobot_create_msgs.msg import AudioNote, AudioNoteVector
 from builtin_interfaces.msg import Duration
+from std_msgs.msg import String
 
 
 class SlowdownMovement(Node):
     def __init__(self):
         super().__init__('slowdown_node')
 
+        self.SOUND = True               # do we want sounds
+        self.LIGHTS = False        # do we want lights (not implemented yet)
+
         self.FORWARD_SPD = 0.5          # m/s
         self.CONF_THRESH = 0.75         # min confidence
         self.TRIGGER_HEIGHT = 60        # bbox_height that starts the slowdown
-        self.SOUND = True               # do we want sounds
 
         self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
         self.ack_sub = self.create_subscription(HallwayAck, '/robot4/hallway_ack', self.hallway_cb, 10)
         self.sound_pub = self.create_publisher(AudioNoteVector, "/robot4/cmd_audio", 2)
+        self.light_pub = self.create_publisher(String, "/light_state", 10)
 
     def hallway_cb(self, msg):
         twist = Twist()
@@ -52,7 +56,15 @@ class SlowdownMovement(Node):
             audio_msg = AudioNoteVector()
             audio_msg.append = False
             self.get_logger().info("Sound Killed.")
-            
+
+        if self.LIGHTS:
+            light_msg = String()
+            if twist.linear.x < self.FORWARD_SPD:
+                light_msg.data = "something"
+            else:
+                light_msg.data = "something else"
+
+        self.light_pub.publish(light_msg)    
         self.sound_pub.publish(audio_msg)
         self.publisher.publish(twist)
 
