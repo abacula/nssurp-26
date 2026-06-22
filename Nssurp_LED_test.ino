@@ -3,6 +3,7 @@
 
 
 #include <FastLED.h>
+#include <stdio.h>
 
 #define DATA_PIN 2
 
@@ -21,6 +22,7 @@ int color_base = 0;
 int color;
 int sat;
 int bright;
+
 
 
 // Cycle for LED blinking
@@ -56,6 +58,7 @@ void loop() {
 
   // Colors use the "Spectrum" color map
   //instant(171); // Needs a color int
+  //dim(100); // Needs a value to dim by
   //rainbow(); // Doesn't need variables
   //facing(9, 1, 160, 0); // Needs a place to change color at, distance to change color around, default color, and secondary color
   //spin(10, 171, 0, 50); // Needs a range to spin, color that is spun, a background color, and a speed
@@ -69,19 +72,44 @@ void loop() {
 //    Serial.println(color);
 //    Serial.println(color);
 //    Serial.println(wait);
-    if(Serial.available() > 0){
+
+
+    //if(Serial.available() > 0){
+    if (true){
+      char state[30];
+      int a, b, c;
       String piData = Serial.readStringUntil('\n');
-      if (piData.length() > 0){
-        instant(171);
+      //String piData = "pulse 175";
+      
+      sscanf(piData.c_str(), "%s %d %d %d", state, &a, &b, &c);
+      
+      const char *inst_state = "instant";
+      const char *pulse_state = "pulse";
+      
+      if (strcmp(state,inst_state) == 0){
+        instant(a);
       }
-    }
-    else {
-      instant(10);
+      else if (strcmp(state,pulse_state) == 0){
+        pulse(a, 2, 1, 255, 100);
+      }
+      else{
+        rainbow();
+      }
+      
     }
 
     FastLED.show();
     delay(10);
 }
+
+void off()
+{
+  for(int i = 0; i < NUM_LEDS; i++)
+  {
+    leds[i] = CHSV(0, 0, 0);
+    delay(wait);
+  }
+  FastLED.show();
 
 // Instant color change
 void instant(int instantColor)
@@ -91,6 +119,16 @@ void instant(int instantColor)
   for(int i = 0; i < NUM_LEDS; i++)
   {
     leds[i] = CHSV(color, sat, bright);
+    delay(wait);
+  }
+  FastLED.show();
+}
+
+void dim(int dim)
+{
+  for(int i = 0; i < NUM_LEDS; i++)
+  {
+    leds[i].fadeLightBy(dim);
     delay(wait);
   }
   FastLED.show();
