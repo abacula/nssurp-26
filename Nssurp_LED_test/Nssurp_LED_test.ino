@@ -70,7 +70,7 @@ void loop() {
   //spin(10, 171, 0, 50); // Needs a range to spin, color that is spun, a background color, and a speed
   //pulse(85, 2, 1, 255, 100); // Needs a color to pulse, rate to change, time to wait, max brightness, and min brightness
   //fade(85, 5, 10); // Needs a color to fade, a rate to fade at, and a time to wait
-  //fadeTo(0, 255, 5, 100); // Needs two colors to fade between, a speed to fade at, and a time to wait
+  //fadeTo(0, 255, 5, 10); // Needs two colors to fade between, a speed to fade at, and a time to wait
   //turn(42, false, 500); // Needs a turn color, a direction boolean, and a blink time
 
     if(Serial.available() > 0)
@@ -103,11 +103,11 @@ void loop() {
     else if (strcmp(state,spin_state) == 0)
       spin(a,b,c,50);
     else if (strcmp(state,pulse_state) == 0)
-      pulse(a, 2, 1, 255, 100);
+      pulse(b, a, 10, 255, 100);
     else if (strcmp(state,fade_state) == 0)
-      fade(a,5,10);
+      fade(b,a,10);
     else if (strcmp(state,fadeTo_state) == 0)
-      fadeTo(a,b,5,100);
+      fadeTo(b,c,a,100);
     else if (strcmp(state,turn_state) == 0)
     {
       if (a == 1)
