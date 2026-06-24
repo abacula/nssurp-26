@@ -9,7 +9,7 @@
 
 
 // How many leds in your strip?
-#define NUM_LEDS 96
+#define NUM_LEDS 82
 
 
 
@@ -22,7 +22,13 @@ int color_base = 0;
 int color;
 int sat;
 int bright;
-
+char state[30];
+int a, b, c;
+bool blinking = false;
+bool increase = true; // Starts by going up to the larger color value
+int curCol = -1;
+bool fadeIn = false;
+int fadeBright = 255;
 
 
 // Cycle for LED blinking
@@ -45,8 +51,8 @@ void setup() {
   // Set LEDs to white on start
   for(int i = 0; i < NUM_LEDS; i = i + 1)
         leds[i] = CHSV(0, 0, 0);
-      FastLED.show();
-      delay(wait);
+  FastLED.show();
+  delay(wait);
 }
 
 
@@ -67,59 +73,54 @@ void loop() {
   //fadeTo(0, 255, 5, 100); // Needs two colors to fade between, a speed to fade at, and a time to wait
   //turn(42, false, 500); // Needs a turn color, a direction boolean, and a blink time
 
-//  Terminal output
-//    Serial.print("LED loop: ");
-//    Serial.println(color);
-//    Serial.println(color);
-//    Serial.println(wait);
-
-
-    if(Serial.available() > 0){
-      char state[30];
-      int a, b, c;
+    if(Serial.available() > 0)
+    {
       String piData = Serial.readStringUntil('\n');
-      
-      sscanf(piData.c_str(), "%s %d %d %d", state, &a, &b, &c);
-      
-      const char *inst_state = "instant";
-      const char *dim_state = "dim";
-      const char *rainbow_state = "rainbow";
-      const char *facing_state = "facing";
-      const char *spin_state = "spin";
-      const char *pulse_state = "pulse";
-      const char *fade_state = "fade";
-      const char *fadeTo_state = "fadeTo";
-      const char *turn_state = "turn";
-      
-      if (strcmp(state,inst_state) == 0)
-        instant(a);
-      else if (strcmp(state,dim_state) == 0)
-        dim(a);
-      else if (strcmp(state,rainbow_state) == 0)
-        rainbow();
-      else if (strcmp(state,facing_state) == 0)
-        facing(a,16,b,c);
-      else if (strcmp(state,spin_state) == 0)
-        spin(a,b,c,50);
-      else if (strcmp(state,pulse_state) == 0)
-        pulse(a, 2, 1, 255, 100);
-      else if (strcmp(state,fade_state) == 0)
-        fade(a,5,10);
-      else if (strcmp(state,fadeTo_state) == 0)
-        fadeTo(a,b,5,100);
-      else if (strcmp(state,turn_state) == 0)
-      {
-        if (a == 1)
-          turn(42, true, 500);
-        else
-          turn(42, false, 500);
-      }
-      else
-        off();
-    }
 
+      if (piData != NULL)
+        sscanf(piData.c_str(), "%s %d %d %d", state, &a, &b, &c);
+    }
+    
+    const char *inst_state = "instant";
+    const char *dim_state = "dim";
+    const char *rainbow_state = "rainbow";
+    const char *facing_state = "facing";
+    const char *spin_state = "spin";
+    const char *pulse_state = "pulse";
+    const char *fade_state = "fade";
+    const char *fadeTo_state = "fadeTo";
+    const char *turn_state = "turn";
+    const char *alt_state = "alternate";
+    
+    if (strcmp(state,inst_state) == 0)
+      instant(a);
+    else if (strcmp(state,dim_state) == 0)
+      dim(a);
+    else if (strcmp(state,rainbow_state) == 0)
+      rainbow();
+    else if (strcmp(state,facing_state) == 0)
+      facing(a,16,b,c);
+    else if (strcmp(state,spin_state) == 0)
+      spin(a,b,c,50);
+    else if (strcmp(state,pulse_state) == 0)
+      pulse(a, 2, 1, 255, 100);
+    else if (strcmp(state,fade_state) == 0)
+      fade(a,5,10);
+    else if (strcmp(state,fadeTo_state) == 0)
+      fadeTo(a,b,5,100);
+    else if (strcmp(state,turn_state) == 0)
+    {
+      if (a == 1)
+        turn(42, true, 500);
+      else
+        turn(42, false, 500);
+    }
+    else if (strcmp(state,alt_state) == 0)
+      alternate(a,b);
+    else
+      off();
     FastLED.show();
-    delay(10);
+    delay(wait);
 }
 
 //No lights on
@@ -163,7 +164,6 @@ void rainbow() {
    leds[i] = CHSV(color, sat, bright);
    FastLED.show();
    delay(wait);
-   
   }
 }
 
@@ -199,8 +199,6 @@ void facing(int place, int distance, int defaultColor, int faceColor) {
 // Spins an area of 'range' leds of 'spinColor' along the background of'baseColor'
 void spin(int range, int spinColor, int baseColor, int speed)
 {
-  wait = 250;
-
   for(int i = 0; i < NUM_LEDS; i++)
   {
     int place = i-range;
@@ -228,8 +226,6 @@ void pulse(int col, int pulseSpeed, int waitTime, int maxBri, int minBri)
 }
 
 // Fades in and out constantly at 'fadeRate' speed
-bool fadeIn = false;
-int fadeBright = 255;
 void fade(int col, int fadeRate, int waitTime)
 {
   color = col;
@@ -252,11 +248,9 @@ void fade(int col, int fadeRate, int waitTime)
 }
 
 // Fades from 'color1' to 'color2'  at 'fadeRate' time (seconds)
-bool increase = true; // Starts by going up to the larger color value
-int curCol = -1000000;
 void fadeTo(int color1, int color2, int fadeRate, int waitTime)
 {
-  if (curCol == -1000000)
+  if (curCol == -1)
     curCol = min(color1, color2); // Starts at the smaller color value
 
   if (increase)
@@ -280,7 +274,6 @@ void fadeTo(int color1, int color2, int fadeRate, int waitTime)
 
 // Looks like a turn signal. Boolean 'turn': left is true, right is false
 // Turn signal color is the left/right (area) of the LED strip, assuming back right is 0 and back left is NUM_LEDS
-bool blinking = false;
 void turn(int turnColor, bool turn, int waitTime)
 {
   for (int i = 0; i < NUM_LEDS; i++)
@@ -313,4 +306,18 @@ void turn(int turnColor, bool turn, int waitTime)
   
   FastLED.show();
   delay(waitTime);
+}
+
+void alternate(int color1, int color2)
+{
+  for(int i = 0; i < NUM_LEDS; i++)
+  {
+    if (i % 2 == 0) //Even
+      leds[i] = CHSV(color1, sat, bright);
+    else //Odd
+      leds[i] = CHSV(color2, sat, bright);
+      
+    FastLED.show();
+    delay(wait);
+  }
 }
