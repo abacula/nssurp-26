@@ -18,15 +18,15 @@ class DodgeNode(Node):
         self.SOUNDS = False                         # do we want sounds
         self.LIGHTS = True                          # do we want lights (not implemented yet)
 
-        self.LIGHT_STATE = "fade 5 171"             # light state when dodging 
-        self.DEFAULT_LIGHT_STATE = "instant 171"    # default light state when not dodging
+        self.LIGHT_STATE = "fade 5 85"             # light state when dodging 
+        self.DEFAULT_LIGHT_STATE = "instant 85"    # default light state when not dodging
 
         self.FORWARD_SPD = 0.5          # m/s
         self.TURN_RATE = 0.5            # rad/s
         self.ARC_DURATION = 2.5         # s, time spent in EACH arc
 
         self.CONF_THRESH = 0.70
-        self.TRIGGER_HEIGHT = 74        # bbox_height that starts the dodge
+        self.TRIGGER_HEIGHT = 76        # bbox_height that starts the dodge
 
         self.phase = self.STRAIGHT
         self.dodge_timer = None
