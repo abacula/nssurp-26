@@ -15,7 +15,7 @@ class DodgeNode(Node):
     def __init__(self):
         super().__init__('dodge_node')
 
-        self.SOUNDS = False                         # do we want sounds
+        self.SOUNDS = True                         # do we want sounds
         self.LIGHTS = True                          # do we want lights (not implemented yet)
 
         self.LIGHT_STATE = "fade 5 85"             # light state when dodging 

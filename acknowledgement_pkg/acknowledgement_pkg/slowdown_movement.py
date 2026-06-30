@@ -11,8 +11,8 @@ class SlowdownMovement(Node):
     def __init__(self):
         super().__init__('slowdown_node')
 
-        self.SOUND = False               # do we want sounds
-        self.LIGHTS = True        # do we want lights (not implemented yet)
+        self.SOUND = True               # do we want sounds
+        self.LIGHTS = True              # do we want lights (not implemented yet)
         self.FADE_RATE = 5
         self.FORWARD_SPD = 0.5          # m/s
         self.CONF_THRESH = 0.75         # min confidence
@@ -44,7 +44,7 @@ class SlowdownMovement(Node):
                 note = AudioNote()           
                 time_play = Duration()
     
-                # time_play.nanosec = 150000000 # 0.15 seconds
+                # time_play.nanosec = 1000000000 # 1 seconds
                 time_play.sec = 1
                 note.max_runtime = time_play
                 note.frequency = freq

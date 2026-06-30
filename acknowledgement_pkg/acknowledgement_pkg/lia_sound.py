@@ -38,12 +38,13 @@ class LiaSound(Node):
             #Durations = [.2, .2, .4, .2]
             #Melody = [1396, 1318, 1396, 1318]
             #Durations = [.2, .2, .2, .2]
-            Melody = [1318, 1568, 1760, 1396]
+            # Melody = [1318, 1568, 1760, 1396]
             Durations = [.2, .2, .2, .2]
             #Melody = [1318, 1568, 1760, 1568, 1396]
             #Durations = [.2, .2, .2, .2, .2]
             #Melody = [0.0]
             #Durations = [0]
+            Melody = [1976, 1568, 1760, 2093]
             for x in range(len(Melody)):
                 note = AudioNote()           
                 time_play = Duration()
