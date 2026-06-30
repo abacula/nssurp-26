@@ -23,7 +23,7 @@ int color;
 int sat;
 int bright;
 char state[30];
-int a, b, c;
+int a, b, c, d;
 bool blinking = false;
 bool increase = true; // Starts by going up to the larger color value
 int curCol = -1;
@@ -63,22 +63,23 @@ void loop() {
   color_base = 0;
 
   // Colors use the "Spectrum" color map
-  //instant(171); // Needs a color int
-  //dim(100); // Needs a value to dim by
-  //rainbow(); // Doesn't need variables
-  //facing(9, 1, 160, 0); // Needs a place to change color at, distance to change color around, default color, and secondary color
+  //instant(171,1); // Needs a color int and a wait time
+  //dim(100, 1); // Needs a value to dim by and a wait time
+  //rainbow(1); // Only needs a wait time
+  //facing(9, 1, 160, 0, 1); // Needs a place to change color at, distance to change color around, default color, secondary color, and a wait time
   //spin(10, 171, 0, 50); // Needs a range to spin, color that is spun, a background color, and a speed
   //pulse(85, 2, 1, 255, 100); // Needs a color to pulse, rate to change, time to wait, max brightness, and min brightness
   //fade(85, 5, 10); // Needs a color to fade, a rate to fade at, and a time to wait
-  //fadeTo(0, 255, 5, 10); // Needs two colors to fade between, a speed to fade at, and a time to wait
-  //turn(42, false, 500); // Needs a turn color, a direction boolean, and a blink time
+  //fadeTo(0, 255, 5, 10); // Needs two colors to fade between, a rate to fade at, and a time to wait
+  //turn(42, false, 500); // Needs a turn color, a direction boolean, a blink time, and a wait time
+  //alternate(171,255,1); // Needs a color for even leds, a color for odd leds, and a wait time
 
     if(Serial.available() > 0)
     {
       String piData = Serial.readStringUntil('\n');
 
       if (piData != NULL)
-        sscanf(piData.c_str(), "%s %d %d %d", state, &a, &b, &c);
+        sscanf(piData.c_str(), "%s %d %d %d", state, &a, &b, &c, &d);
     }
     
     const char *inst_state = "instant";
@@ -93,82 +94,82 @@ void loop() {
     const char *alt_state = "alternate";
     
     if (strcmp(state,inst_state) == 0)
-      instant(a);
+      instant(a,b);
     else if (strcmp(state,dim_state) == 0)
-      dim(a);
+      dim(a,b);
     else if (strcmp(state,rainbow_state) == 0)
-      rainbow();
+      rainbow(a);
     else if (strcmp(state,facing_state) == 0)
-      facing(a,16,b,c);
+      facing(a,16,b,c,d);
     else if (strcmp(state,spin_state) == 0)
-      spin(a,b,c,50);
+      spin(a,b,c,d);
     else if (strcmp(state,pulse_state) == 0)
-      pulse(b, a, 10, 255, 100);
+      pulse(b, a, c, 255, 100);
     else if (strcmp(state,fade_state) == 0)
-      fade(b,a,10);
+      fade(b,a,c);
     else if (strcmp(state,fadeTo_state) == 0)
-      fadeTo(b,c,a,100);
+      fadeTo(b,c,a,d);
     else if (strcmp(state,turn_state) == 0)
     {
       if (a == 1)
-        turn(42, true, 500);
+        turn(42, true, b);
       else
-        turn(42, false, 500);
+        turn(42, false, b);
     }
     else if (strcmp(state,alt_state) == 0)
-      alternate(a,b);
+      alternate(a,b,c);
     else
-      off();
+      off(1);
     FastLED.show();
     delay(wait);
 }
 
 //No lights on
-void off()
+void off(int waitTime)
 {
   for(int i = 0; i < NUM_LEDS; i++)
   {
     leds[i] = CHSV(0, 0, 0);
-    delay(wait);
+    delay(waitTime);
   }
   FastLED.show();
 }
 
 // Instant color change
-void instant(int instantColor)
+void instant(int instantColor, int waitTime)
 {
   color = instantColor;
   
   for(int i = 0; i < NUM_LEDS; i++)
   {
     leds[i] = CHSV(color, sat, bright);
-    delay(wait);
+    delay(waitTime);
   }
   FastLED.show();
 }
 
-void dim(int dim)
+void dim(int dim, int waitTime)
 {
   for(int i = 0; i < NUM_LEDS; i++)
   {
     leds[i].fadeLightBy(dim);
-    delay(wait);
+    delay(waitTime);
   }
   FastLED.show();
 }
 
 // Rainbow of color around the strip, conforms to strip length
-void rainbow() {
+void rainbow(int waitTime) {
   for(int i = 0; i < NUM_LEDS; i = i + 1) {
    color = round(((float)i)/NUM_LEDS * 255);
    leds[i] = CHSV(color, sat, bright);
    FastLED.show();
-   delay(wait);
+   delay(waitTime);
   }
 }
 
 // Changes color around 'place' in the LED array
-void facing(int place, int distance, int defaultColor, int faceColor) {
+void facing(int place, int distance, int defaultColor, int faceColor, int waitTime) {
   for(int i = 0; i < NUM_LEDS; i++)
   {
     if (abs(i-place) <= distance)
@@ -191,13 +192,13 @@ void facing(int place, int distance, int defaultColor, int faceColor) {
       leds[i] = CHSV(defaultColor, sat, bright);
 
     //FastLED.show();
-    delay(wait);
+    delay(waitTime);
   }
   FastLED.show();
 }
 
 // Spins an area of 'range' leds of 'spinColor' along the background of'baseColor'
-void spin(int range, int spinColor, int baseColor, int speed)
+void spin(int range, int spinColor, int baseColor, int waitTime)
 {
   for(int i = 0; i < NUM_LEDS; i++)
   {
@@ -208,7 +209,7 @@ void spin(int range, int spinColor, int baseColor, int speed)
     leds[i] = CHSV(spinColor, sat, bright);
     leds[place] = CHSV(baseColor, sat, bright);
     FastLED.show();
-    delay(speed);
+    delay(waitTime);
   }
 }
 
@@ -308,7 +309,7 @@ void turn(int turnColor, bool turn, int waitTime)
   delay(waitTime);
 }
 
-void alternate(int color1, int color2)
+void alternate(int color1, int color2, int waitTime)
 {
   for(int i = 0; i < NUM_LEDS; i++)
   {
@@ -318,6 +319,6 @@ void alternate(int color1, int color2)
       leds[i] = CHSV(color2, sat, bright);
       
     FastLED.show();
-    delay(wait);
+    delay(waitTime);
   }
 }

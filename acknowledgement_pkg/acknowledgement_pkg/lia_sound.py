@@ -34,12 +34,14 @@ class LiaSound(Node):
             self.can_play = False
             
             audio_msg = AudioNoteVector()
+            Melody = [1174, 1318, 1568]
+            Durations = [.2, .2, .4]
             #Melody = [1174, 1318, 1568, 1174]
             #Durations = [.2, .2, .4, .2]
             #Melody = [1396, 1318, 1396, 1318]
             #Durations = [.2, .2, .2, .2]
-            # Melody = [1318, 1568, 1760, 1396]
-            Durations = [.2, .2, .2, .2]
+            #Melody = [1318, 1568, 1760, 1396]
+            #Durations = [.2, .2, .2, .2]
             #Melody = [1318, 1568, 1760, 1568, 1396]
             #Durations = [.2, .2, .2, .2, .2]
             #Melody = [0.0]
