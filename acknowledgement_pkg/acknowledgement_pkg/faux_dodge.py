@@ -5,6 +5,7 @@ from yolo_msgs.msg import HallwayAck
 from irobot_create_msgs.msg import AudioNote, AudioNoteVector
 from builtin_interfaces.msg import Duration
 from std_msgs.msg import String
+import time
 
 class DodgeNode(Node):
     # phases
@@ -18,19 +19,21 @@ class DodgeNode(Node):
         self.SOUNDS = True                         # do we want sounds
         self.LIGHTS = True                          # do we want lights
 
-        self.LIGHT_STATE = "fade 5 85"             # light state when dodging 
-        self.DEFAULT_LIGHT_STATE = "instant 85"    # default light state when not dodging
+        self.LEFT_LIGHTS = "turn 1 500"             # light state when dodging
+        self.RIGHT_LIGHTS = "turn 0 500"            # light state when dodging
+        self.DEFAULT_LIGHT_STATE = "instant 85 1"    # default light state when not dodging
 
         self.FORWARD_SPD = 0.5          # m/s
         self.TURN_RATE = 0.5            # rad/s
-        self.ARC_DURATION = 2.5         # s, time spent in EACH arc
+        self.ARC_DURATION = 2.0         # s, time spent in EACH arc
 
-        self.CONF_THRESH = 0.70         # min confidence
-        self.TRIGGER_HEIGHT = 76        # bbox_height that starts the dodge
+        self.CONF_THRESH = 0.0          # min confidence
+        self.TRIGGER_HEIGHT = 70        # bbox_height that starts the dodge
 
         self.phase = self.STRAIGHT
         self.dodge_timer = None
         self.HAS_SEEN = False
+        self.HAS_RETURNED = False
 
         # pubs and subs
         self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
@@ -41,8 +44,6 @@ class DodgeNode(Node):
         self.timer = self.create_timer(0.1, self.control_loop)
 
     def hallway_cb(self, msg):
-        if self.SOUNDS:
-            self.change_sounds()
         if self.LIGHTS:
             self.change_light_state()
 
@@ -55,50 +56,80 @@ class DodgeNode(Node):
                 and msg.bbox_height > self.TRIGGER_HEIGHT
                 and not self.HAS_SEEN):
             self.HAS_SEEN = True
+
+            if self.SOUNDS:
+                self.change_sounds()
+
             self.get_logger().info("Person detected -- arcing right.")
             self.phase = self.ARC_RIGHT
             self.dodge_timer = self.create_timer(self.ARC_DURATION, self.begin_left)
+        
+        if (self.HAS_SEEN 
+            and not self.HAS_RETURNED
+            and not msg.person_detected
+            and self.phase == self.STRAIGHT):
+            self.HAS_RETURNED = True
+
+            if self.SOUNDS:
+                self.change_sounds_again()
+
+            self.get_logger().info("Person no longer detected -- arcing left.")
+            self.phase = self.ARC_LEFT
+            self.dodge_timer = self.create_timer(self.ARC_DURATION, self.begin_right)
 
     # ================================================================================
     # LIGHTS
     # ================================================================================
     def change_light_state(self):
-        # change light state to pulse while dodging, and turn off when done or otherwise
-        if self.phase != self.STRAIGHT:
-            light_msg = String()
-            light_msg.data = self.LIGHT_STATE
-            self.light_pub.publish(light_msg)
+        # change light state to...
+        light_msg = String()
+        if self.phase == self.ARC_RIGHT:
+            light_msg.data = self.RIGHT_LIGHTS
+
+        elif self.phase == self.ARC_LEFT:
+            light_msg.data = self.LEFT_LIGHTS
 
         elif self.phase == self.STRAIGHT:
-            light_msg = String()
             light_msg.data = self.DEFAULT_LIGHT_STATE
-            self.light_pub.publish(light_msg)
+        
+        self.light_pub.publish(light_msg)
     
     # ================================================================================
     # SOUNDS
     # ================================================================================
     def change_sounds(self):
-        # play sound while dodging, and stop when done or otherwise
-        if self.phase != self.STRAIGHT:
-            audio_msg = AudioNoteVector()
-            Melody = [880,698]
-            for freq in Melody:
-                note = AudioNote()           
-                time_play = Duration()
+        audio_msg = AudioNoteVector()
+        Melody = [1174, 1318, 1568]
+        Durations = [.2, .2, .4]
+        for x in range(len(Melody)):
+            note = AudioNote()           
+            time_play = Duration()
 
-                time_play.nanosec = 1000000000 # 1 second(s)
-                note.max_runtime = time_play
-                note.frequency = freq
+            time_play.nanosec = int(Durations[x] * 1000000000) # val * 1 second
+            note.max_runtime = time_play
+            note.frequency = Melody[x]
 
-                audio_msg.append = True
-                audio_msg.notes.append(note)
-            self.sound_pub.publish(audio_msg)
-            
-        elif self.phase != self.STRAIGHT:
-            audio_msg = AudioNoteVector()
-            audio_msg.append = False
-            self.sound_pub.publish(audio_msg)
-            self.get_logger().info("Sound Killed.")
+            audio_msg.append = True
+            audio_msg.notes.append(note)
+
+        self.sound_pub.publish(audio_msg)
+
+    def change_sounds_again(self):
+        audio_msg = AudioNoteVector()
+        Melody = [1568, 1318, 1174]
+        Durations = [.2, .2, .4]
+        for x in range(len(Melody)):
+            note = AudioNote()           
+            time_play = Duration()
+
+            time_play.nanosec = int(Durations[x] * 1000000000) # val * 1 second
+            note.max_runtime = time_play
+            note.frequency = Melody[x]
+
+            audio_msg.append = True
+            audio_msg.notes.append(note)
+
+        self.sound_pub.publish(audio_msg)
 
     # ================================================================================
     # MOVEMENT
@@ -107,7 +138,18 @@ class DodgeNode(Node):
         # right arc done; now arc back left by the same amount to straighten out
         self.get_logger().info("Arcing back left.")
         self.phase = self.ARC_LEFT
-        self._reset_timer(self.finish_dodge, 1.25 * self.ARC_DURATION)
+        if self.LIGHTS:
+            self.change_light_state()
+        self._reset_timer(self.finish_dodge, self.ARC_DURATION)
+    
+    def begin_right(self):
+        # left arc done; now arc back right by the same amount to straighten out
+        self.get_logger().info("Arcing back right.")
+        self.phase = self.ARC_RIGHT
+        if self.LIGHTS:
+            self.change_light_state()
+        self._reset_timer(self.finish_dodge, self.ARC_DURATION)
+
 
     def finish_dodge(self):
         self.get_logger().info("Dodge complete -- driving straight down the hallway.")
