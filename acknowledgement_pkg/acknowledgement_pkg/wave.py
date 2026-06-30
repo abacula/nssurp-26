@@ -17,6 +17,8 @@ class Wave(Node):
         self.speed = 0.5
         self.waving = False
         self.waved = False
+        self.lights = True
+        self.sound = True
 
         # Change to have your node name
         super().__init__('wave_node')
@@ -38,14 +40,16 @@ class Wave(Node):
             self.person_detected = False
             light_msg = String()
             light_msg.data = "Instant 85"
-            self.light_pub.publish(light_msg)
+            if self.lights == True:
+                self.light_pub.publish(light_msg)
 
     def wave(self):
 
         light_msg = String()
         light_msg.data = "Rainbow 10"
         # Spin? Fade?
-        self.light_pub.publish(light_msg)
+        if self.lights == True:
+            self.light_pub.publish(light_msg)
 
         self.waving = True
         self.waved = True
@@ -60,7 +64,7 @@ class Wave(Node):
         
         twist.angular.z = 0.0
         self.publisher.publish(twist)
-        self.changeSound(True)
+        self.changeSound()
 
         # Wave left
         twist.angular.z = 0.5
@@ -91,8 +95,8 @@ class Wave(Node):
         time.sleep(0.5)
         self.waving = False
 
-    def changeSound(self, on):
-        if on:
+    def changeSound(self):
+        if self.sound:
             audio_msg = AudioNoteVector()
             Melody = [1174, 1318, 1568]
             Durations = [.2, .2, .4]

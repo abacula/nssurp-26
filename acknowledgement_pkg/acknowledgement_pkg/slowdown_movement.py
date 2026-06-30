@@ -11,8 +11,8 @@ class SlowdownMovement(Node):
     def __init__(self):
         super().__init__('slowdown_node')
 
-        self.SOUND = False               # do we want sounds
-        self.LIGHTS = True        # do we want lights (not implemented yet)
+        self.SOUND = True               # do we want sounds
+        self.LIGHTS = True              # do we want lights
         self.FADE_RATE = 5
         self.FORWARD_SPD = 0.5          # m/s
         self.CONF_THRESH = 0.75         # min confidence
