@@ -44,7 +44,7 @@ class SlowdownMovement(Node):
                 note = AudioNote()           
                 time_play = Duration()
     
-                # time_play.nanosec = 1000000000 # 1 seconds
+                # time_play.nanosec = 150000000 # 0.15 seconds
                 time_play.sec = 1
                 note.max_runtime = time_play
                 note.frequency = freq
@@ -70,7 +70,8 @@ class SlowdownMovement(Node):
         self.publisher.publish(twist)
 
     def get_speed(self, box_height, max_speed = 0.5, min_speed=0.05):
-        ratio = self.FORWARD_SPD / 2 #(self.TRIGGER_HEIGHT) / (box_height*1.35) # 0.0 (close) to 1.0 (far)
+        # (self.TRIGGER_HEIGHT) / (box_height*1.35) # 0.0 (close) to 1.0 (far) # (old speed ratio calculation)
+        ratio = self.FORWARD_SPD / 2 
         return float(min_speed + ratio * (max_speed - min_speed))
 
 def main(args=None):
@@ -79,7 +80,6 @@ def main(args=None):
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()

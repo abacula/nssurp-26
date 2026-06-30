@@ -16,7 +16,7 @@ class DodgeNode(Node):
         super().__init__('dodge_node')
 
         self.SOUNDS = True                         # do we want sounds
-        self.LIGHTS = True                          # do we want lights (not implemented yet)
+        self.LIGHTS = True                          # do we want lights
 
         self.LIGHT_STATE = "fade 5 85"             # light state when dodging 
         self.DEFAULT_LIGHT_STATE = "instant 85"    # default light state when not dodging
@@ -25,7 +25,7 @@ class DodgeNode(Node):
         self.TURN_RATE = 0.5            # rad/s
         self.ARC_DURATION = 2.5         # s, time spent in EACH arc
 
-        self.CONF_THRESH = 0.70
+        self.CONF_THRESH = 0.70         # min confidence
         self.TRIGGER_HEIGHT = 76        # bbox_height that starts the dodge
 
         self.phase = self.STRAIGHT
