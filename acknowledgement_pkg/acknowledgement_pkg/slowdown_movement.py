@@ -70,7 +70,7 @@ class SlowdownMovement(Node):
         self.publisher.publish(twist)
 
     def get_speed(self, box_height, max_speed = 0.5, min_speed=0.05):
-        ratio = (self.TRIGGER_HEIGHT) / (box_height*1.35)                   # 0.0 (close) to 1.0 (far)
+        ratio = self.FORWARD_SPD / 2 #(self.TRIGGER_HEIGHT) / (box_height*1.35) # 0.0 (close) to 1.0 (far)
         return float(min_speed + ratio * (max_speed - min_speed))
 
 def main(args=None):

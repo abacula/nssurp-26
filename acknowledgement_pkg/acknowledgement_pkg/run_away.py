@@ -78,9 +78,7 @@ class RunAway(Node):
                     #self.get_logger().info("Turned")
                 else:
                     turn_speed = (self.angle_goal - self.ang)
-                if 2 > turn_speed > 1:
-                    turn_speed **= 2
-                elif 2 > turn_speed > 0.01:
+                if 2 > turn_speed > 0.05:
                     turn_speed *= 2
                 elif turn_speed < 0.01:
                     turn_speed = 0.01

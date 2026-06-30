@@ -5,6 +5,7 @@ from yolo_msgs.msg import HallwayAck
 from geometry_msgs.msg import Twist
 from irobot_create_msgs.msg import AudioNote, AudioNoteVector
 from builtin_interfaces.msg import Duration
+from std_msgs.msg import String
 
 # Any additional imports here
 
@@ -24,6 +25,7 @@ class Wave(Node):
         self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
         self.sound_pub = self.create_publisher(AudioNoteVector, "/robot4/cmd_audio", 2)
         self.ack_sub = self.create_subscription(HallwayAck, '/robot4/hallway_ack', self.hallway_cb, 10)
+        self.light_pub = self.create_publisher(String, "/light_state", 10)
 
         self.timer = self.create_timer(0.1, self.loop)
     
@@ -34,8 +36,16 @@ class Wave(Node):
             self.wave()
         else:
             self.person_detected = False
+            light_msg = String()
+            light_msg.data = "Instant 85"
+            self.light_pub.publish(light_msg)
 
     def wave(self):
+
+        light_msg = String()
+        light_msg.data = "Rainbow 10"
+        # Spin? Fade?
+        self.light_pub.publish(light_msg)
 
         self.waving = True
         self.waved = True
@@ -84,16 +94,8 @@ class Wave(Node):
     def changeSound(self, on):
         if on:
             audio_msg = AudioNoteVector()
-            Melody = [1174, 1318, 1568, 1174]
-            Durations = [.2, .2, .4, .2]
-            #Melody = [1396, 1318, 1396, 1318]
-            #Durations = [.2, .2, .2, .2]
-            #Melody = [1318, 1568, 1760, 1396]
-            #Durations = [.2, .2, .2, .2]
-            #Melody = [1318, 1568, 1760, 1568, 1396]
-            #Durations = [.2, .2, .2, .2, .2]
-            #Melody = [0]
-            #Durations = [0.0]
+            Melody = [1174, 1318, 1568]
+            Durations = [.2, .2, .4]
             for x in range(len(Melody)):
                 note = AudioNote()           
                 time_play = Duration()
