@@ -11,8 +11,9 @@ class Wave(Node):
     def __init__(self):
         super().__init__('wave_node')
 
-        self.LIGHTS = True              # do we want lights
-        self.SOUNDS = True              # do we want sounds
+        self.LIGHTS = True                     # do we want lights
+        self.INITIAL_LIGHT_STATE = True        # do we want lights to be set to initial state
+        self.SOUNDS = True                     # do we want sounds
 
         self.SPEED = 0.5                # m/s
         self.CONF_THRESH = 0.75         # min confidence
@@ -32,6 +33,10 @@ class Wave(Node):
         self.timer = self.create_timer(0.1, self.loop)
     
     def hallway_cb(self, msg):
+        if self.LIGHTS and self.INITIAL_LIGHT_STATE:
+            self.INITIAL_LIGHT_STATE = False
+            self.change_light_state()
+            
         if (msg.person_detected 
             and msg.bbox_height > self.TRIGGER_HEIGHT 
             and not self.WAVED):
@@ -48,9 +53,9 @@ class Wave(Node):
     def change_light_state(self):
         light_msg = String()
         if self.WAVING:
-            light_msg.data = "Rainbow 10"
+            light_msg.data = "rainbow 10"
         else:
-            light_msg.data = "Instant 85"
+            light_msg.data = "instant 85 1"
 
         self.light_pub.publish(light_msg)
 
@@ -78,8 +83,11 @@ class Wave(Node):
     # MOVEMENT
     # ================================================================================
     def wave(self):
+
+        # start waving, set state
         self.WAVING = True
         self.WAVED = True
+        self.change_light_state()
 
         twist = Twist()
         twist.linear.x = 0.0
@@ -120,7 +128,10 @@ class Wave(Node):
         self.publisher.publish(twist)
 
         time.sleep(0.5)
+
+        # done waving, reset state
         self.WAVING = False
+        self.change_light_state()
 
 
     def loop(self):

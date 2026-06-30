@@ -12,11 +12,18 @@ class SlowdownMovement(Node):
         super().__init__('slowdown_node')
 
         self.SOUND = True               # do we want sounds
+        self.SPOKE = False              # have we already spoken
         self.LIGHTS = True              # do we want lights
-        self.FADE_RATE = 5
-        self.FORWARD_SPD = 0.5          # m/s
-        self.CONF_THRESH = 0.75         # min confidence
-        self.TRIGGER_HEIGHT = 70        # bbox_height that starts the slowdown
+
+        self.FORWARD_LIGHTS = "instant 85 1"                 # light state when moving at normal speed
+        self.SLOW_LIGHTS = "fade 5 42 5"                     # light state when moving at slow speed
+
+        self.FORWARD_SPD = 0.5                             # m/s
+        self.SLOW_SPEED = self.FORWARD_SPD / 2             # m/s
+        self.CONF_THRESH = 0.0                             # min confidence
+        self.TRIGGER_HEIGHT = 75                           # bbox_height that starts the slowdown
+        
+        self.CURR_SPEED = 0.0           
 
         self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
         self.ack_sub = self.create_subscription(HallwayAck, '/robot4/hallway_ack', self.hallway_cb, 10)
@@ -29,50 +36,65 @@ class SlowdownMovement(Node):
                 and msg.confidence >= self.CONF_THRESH
                 and msg.bbox_height > self.TRIGGER_HEIGHT):
             self.get_logger().info("Person detected -- slowing down.")
-            twist.linear.x = self.get_speed(msg.bbox_height)
-            if msg.bbox_height > 230:
-                twist.linear.x = 0.0
-
+            twist.linear.x = self.SLOW_SPEED # slow down to half speed
+            
+            # play sounds
+            if (self.SOUND 
+            and not self.SPOKE):
+                self.SPOKE = True
+                self.change_sounds()
+        
+            # change lights
+            if self.LIGHTS:
+                self.change_lights()
+                   
         else:
             self.get_logger().info("No person detected -- keep moving.")
-            twist.linear.x = self.FORWARD_SPD
+            twist.linear.x = self.FORWARD_SPD # keep moving at normal speed
 
-        if self.SOUND and twist.linear.x < self.FORWARD_SPD:
-            audio_msg = AudioNoteVector()
-            Melody = [880,698]
-            for freq in Melody:
-                note = AudioNote()           
-                time_play = Duration()
-    
-                # time_play.nanosec = 150000000 # 0.15 seconds
-                time_play.sec = 1
-                note.max_runtime = time_play
-                note.frequency = freq
-
-                audio_msg.append = True
-                audio_msg.notes.append(note)
-                
-        else:
-            audio_msg = AudioNoteVector()
-            audio_msg.append = False
-           
-        if self.LIGHTS:
-            light_msg = String()
-            if twist.linear.x == 0:
-                light_msg.data = "instant 0"
-            elif twist.linear.x < self.FORWARD_SPD:
-                light_msg.data =  f'fade {self.FADE_RATE} 42'
-
-            else:
-                light_msg.data = "instant 85"
-        self.light_pub.publish(light_msg)    
-        self.sound_pub.publish(audio_msg)
+        self.CURR_SPEED = twist.linear.x
         self.publisher.publish(twist)
 
-    def get_speed(self, box_height, max_speed = 0.5, min_speed=0.05):
-        # (self.TRIGGER_HEIGHT) / (box_height*1.35) # 0.0 (close) to 1.0 (far) # (old speed ratio calculation)
-        ratio = self.FORWARD_SPD / 2 
-        return float(min_speed + ratio * (max_speed - min_speed))
+    # ================================================================================
+    # LIGHTS
+    # ================================================================================
+    def change_lights(self):
+        light_msg = String()
+        if self.CURR_SPEED < self.FORWARD_SPD:
+            light_msg.data = self.SLOW_LIGHTS
+        else:
+            light_msg.data = self.FORWARD_LIGHTS
+        self.light_pub.publish(light_msg)
+
+    # ================================================================================
+    # SOUNDS
+    # ================================================================================
+    def change_sounds(self):
+        audio_msg = AudioNoteVector()
+        Melody = [1174, 1318, 1568]
+        Durations = [.2, .2, .4]
+        for x in range(len(Melody)):
+            note = AudioNote()           
+            time_play = Duration()
+
+            time_play.nanosec = int(Durations[x] * 1000000000) # val * 1 second
+            note.max_runtime = time_play
+            note.frequency = Melody[x]
+
+            audio_msg.append = True
+            audio_msg.notes.append(note)
+
+        self.sound_pub.publish(audio_msg)
+
+    # # ================================================================================
+    # # SPEED CALCULATION
+    # # ================================================================================
+    # def get_speed(self, box_height, max_speed = 0.5, min_speed=0.05):
+    #     # (self.TRIGGER_HEIGHT) / (box_height*1.35) # 0.0 (close) to 1.0 (far) # (old speed ratio calculation)
+    #     # return float(min_speed + ratio * (max_speed - min_speed))
+        
+    #     speed = self.FORWARD_SPD / 2
+    #     return speed 
 
 def main(args=None):
     rclpy.init(args=args)
