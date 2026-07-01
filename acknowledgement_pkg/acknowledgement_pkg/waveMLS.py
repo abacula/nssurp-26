@@ -9,11 +9,11 @@ from std_msgs.msg import String
 
 class Wave(Node):
     def __init__(self):
-        super().__init__('wave_node')
+        super().__init__('wave_node_MLS')
 
-        self.LIGHTS = False                     # do we want lights
-        self.INITIAL_LIGHT_STATE = False        # do we want lights to be set to initial state
-        self.SOUNDS = False                     # do we want sounds
+        self.LIGHTS = True                     # do we want lights
+        self.INITIAL_LIGHT_STATE = True        # do we want lights to be set to initial state
+        self.SOUNDS = True                     # do we want sounds
 
         self.SPEED = 0.5                # m/s
         self.CONF_THRESH = 0.75         # min confidence

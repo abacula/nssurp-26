@@ -1,5 +1,7 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from geometry_msgs.msg import Twist
 from yolo_msgs.msg import HallwayAck
 from irobot_create_msgs.msg import AudioNote, AudioNoteVector
@@ -16,19 +18,21 @@ class DodgeNode(Node):
     def __init__(self):
         super().__init__('dodge_node')
 
-        self.SOUNDS = True                         # do we want sounds
-        self.LIGHTS = True                          # do we want lights
+        self.SOUNDS = False                           # do we want sounds
+        self.LIGHTS = False                           # do we want lights
 
-        self.LEFT_LIGHTS = "turn 1 500"             # light state when dodging
-        self.RIGHT_LIGHTS = "turn 0 500"            # light state when dodging
+        self.DODGE_LIGHTS = "fade 5 42 5"            # light state when dodging
         self.DEFAULT_LIGHT_STATE = "instant 85 1"    # default light state when not dodging
 
         self.FORWARD_SPD = 0.5          # m/s
-        self.TURN_RATE = 0.5            # rad/s
-        self.ARC_DURATION = 2.0         # s, time spent in EACH arc
+        self.TURN_RATE = 0.45            # rad/s
+        self.ARC_DURATION = 2.5         # s, time spent in EACH arc
 
         self.CONF_THRESH = 0.0          # min confidence
         self.TRIGGER_HEIGHT = 70        # bbox_height that starts the dodge
+
+        self.control_callback_group = MutuallyExclusiveCallbackGroup()
+        self.dodge_callback_group = MutuallyExclusiveCallbackGroup()
 
         self.phase = self.STRAIGHT
         self.dodge_timer = None
@@ -41,7 +45,7 @@ class DodgeNode(Node):
         self.sound_pub = self.create_publisher(AudioNoteVector, "/robot4/cmd_audio", 2)
         self.light_pub = self.create_publisher(String, "/light_state", 10)
         
-        self.timer = self.create_timer(0.1, self.control_loop)
+        self.timer = self.create_timer(0.1, self.control_loop, callback_group=self.control_callback_group)
 
     def hallway_cb(self, msg):
         if self.LIGHTS:
@@ -62,7 +66,7 @@ class DodgeNode(Node):
 
             self.get_logger().info("Person detected -- arcing right.")
             self.phase = self.ARC_RIGHT
-            self.dodge_timer = self.create_timer(self.ARC_DURATION, self.begin_left)
+            self.dodge_timer = self.create_timer(self.ARC_DURATION, self.begin_left, callback_group=self.dodge_callback_group)
         
         if (self.HAS_SEEN 
             and not self.HAS_RETURNED
@@ -75,7 +79,7 @@ class DodgeNode(Node):
 
             self.get_logger().info("Person no longer detected -- arcing left.")
             self.phase = self.ARC_LEFT
-            self.dodge_timer = self.create_timer(self.ARC_DURATION, self.begin_right)
+            self.dodge_timer = self.create_timer(self.ARC_DURATION, self.begin_right, callback_group=self.dodge_callback_group)
 
     # ================================================================================
     # LIGHTS
@@ -83,11 +87,8 @@ class DodgeNode(Node):
     def change_light_state(self):
         # change light state to...
         light_msg = String()
-        if self.phase == self.ARC_RIGHT:
-            light_msg.data = self.RIGHT_LIGHTS
-
-        elif self.phase == self.ARC_LEFT:
-            light_msg.data = self.LEFT_LIGHTS
+        if self.phase != self.STRAIGHT:
+            light_msg.data = self.DODGE_LIGHTS
 
         elif self.phase == self.STRAIGHT:
             light_msg.data = self.DEFAULT_LIGHT_STATE
@@ -114,6 +115,7 @@ class DodgeNode(Node):
 
         self.sound_pub.publish(audio_msg)
 
+    # for testing purposes, play the reversed melody when the person is no longer detected
     def change_sounds_again(self):
         audio_msg = AudioNoteVector()
         Melody = [1568, 1318, 1174]
@@ -138,16 +140,12 @@ class DodgeNode(Node):
         # right arc done; now arc back left by the same amount to straighten out
         self.get_logger().info("Arcing back left.")
         self.phase = self.ARC_LEFT
-        if self.LIGHTS:
-            self.change_light_state()
         self._reset_timer(self.finish_dodge, self.ARC_DURATION)
     
     def begin_right(self):
         # left arc done; now arc back right by the same amount to straighten out
         self.get_logger().info("Arcing back right.")
         self.phase = self.ARC_RIGHT
-        if self.LIGHTS:
-            self.change_light_state()
         self._reset_timer(self.finish_dodge, self.ARC_DURATION)
 
 
@@ -161,7 +159,7 @@ class DodgeNode(Node):
             self.dodge_timer.cancel()
             self.dodge_timer = None
         if next_cb is not None:
-            self.dodge_timer = self.create_timer(duration, next_cb)
+            self.dodge_timer = self.create_timer(duration, next_cb, callback_group=self.dodge_callback_group)
 
     def control_loop(self):
         twist = Twist()
@@ -180,7 +178,12 @@ class DodgeNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = DodgeNode()
-    rclpy.spin(node)
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
+    try:
+        executor.spin()
+    except KeyboardInterrupt:
+        pass
     node.destroy_node()
     rclpy.shutdown()
 

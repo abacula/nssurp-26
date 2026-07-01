@@ -9,7 +9,7 @@ from std_msgs.msg import String
 
 class SlowdownMovement(Node):
     def __init__(self):
-        super().__init__('slowdown_node')
+        super().__init__('slow_node_MLS')
 
         self.SOUND = True               # do we want sounds
         self.SPOKE = False              # have we already spoken
