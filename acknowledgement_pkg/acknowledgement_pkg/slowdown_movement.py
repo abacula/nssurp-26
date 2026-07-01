@@ -43,16 +43,15 @@ class SlowdownMovement(Node):
             and not self.SPOKE):
                 self.SPOKE = True
                 self.change_sounds()
-        
-            # change lights
-            if self.LIGHTS:
-                self.change_lights()
                    
         else:
             self.get_logger().info("No person detected -- keep moving.")
             twist.linear.x = self.FORWARD_SPD # keep moving at normal speed
 
         self.CURR_SPEED = twist.linear.x
+        # change lights
+        if self.LIGHTS:
+            self.change_lights()
         self.publisher.publish(twist)
 
     # ================================================================================
