@@ -9,20 +9,11 @@ from std_msgs.msg import String
 
 class Wave(Node):
     def __init__(self):
+        super().__init__('wave_node_MLS')
 
-        self.person_detected = False
-        self.speed = 0.5
-        self.waving = False
-        self.waved = False
-        self.lights = False
-        self.sound = False
-
-        # Change to have your node name
-        super().__init__('wave_node')
-
-        self.LIGHTS = False                     # do we want lights
-        self.INITIAL_LIGHT_STATE = False        # do we want lights to be set to initial state
-        self.SOUNDS = False                     # do we want sounds
+        self.LIGHTS = True                     # do we want lights
+        self.INITIAL_LIGHT_STATE = True        # do we want lights to be set to initial state
+        self.SOUNDS = True                     # do we want sounds
 
         self.SPEED = 0.5                # m/s
         self.CONF_THRESH = 0.75         # min confidence
@@ -137,26 +128,11 @@ class Wave(Node):
         self.publisher.publish(twist)
 
         time.sleep(0.5)
-        self.waving = False
 
-    def changeSound(self):
-        
-        audio_msg = AudioNoteVector()
-        Melody = [1174, 1318, 1568]
-        Durations = [.2, .2, .4]
-        for x in range(len(Melody)):
-            note = AudioNote()           
-            time_play = Duration()
-    
-            time_play.nanosec = int(Durations[x] * 1000000000) # val * 1 second
-            note.max_runtime = time_play
-            note.frequency = Melody[x]
+        # done waving, reset state
+        self.WAVING = False
+        self.change_light_state()
 
-            audio_msg.append = True
-            audio_msg.notes.append(note)
-
-        if self.sound:
-            self.sound_pub.publish(audio_msg)
 
     def loop(self):
         twist = Twist()
