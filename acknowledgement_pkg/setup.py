@@ -33,6 +33,7 @@ setup(
             'wave_node=acknowledgement_pkg.wave:main',
             'avoid_node=acknowledgement_pkg.avoid:main',
             'lia_sound_node=acknowledgement_pkg.lia_sound:main',
+            'plain_node=acknowledgement_pkg.plain:main',
         ],
     },
 )
