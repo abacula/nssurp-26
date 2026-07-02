@@ -74,8 +74,8 @@ class DodgeNode(Node):
             and self.phase == self.STRAIGHT):
             self.HAS_RETURNED = True
 
-            if self.SOUNDS:
-                self.change_sounds_again()
+            # if self.SOUNDS:
+                # self.change_sounds_again()
 
             self.get_logger().info("Person no longer detected -- arcing left.")
             self.phase = self.ARC_LEFT
