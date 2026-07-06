@@ -7,6 +7,8 @@ from yolo_msgs.msg import HallwayAck
 from irobot_create_msgs.msg import AudioNote, AudioNoteVector
 from builtin_interfaces.msg import Duration
 from std_msgs.msg import String
+from rclpy.qos import qos_profile_sensor_data
+from sensor_msgs.msg import LaserScan
 import time
 
 class DodgeNode(Node):
@@ -30,6 +32,8 @@ class DodgeNode(Node):
 
         self.CONF_THRESH = 0.0          # min confidence
         self.TRIGGER_HEIGHT = 70        # bbox_height that starts the dodge
+        self.OBSTACLE_DETECTED = False  # stop movement if obstacle detected
+        self.OBS_THRESH = 0.5           # m, distance to obstacle that triggers stop
 
         self.control_callback_group = MutuallyExclusiveCallbackGroup()
         self.dodge_callback_group = MutuallyExclusiveCallbackGroup()
@@ -40,8 +44,10 @@ class DodgeNode(Node):
         self.HAS_RETURNED = False
 
         # pubs and subs
-        self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
         self.ack_sub = self.create_subscription(HallwayAck, '/robot4/hallway_ack', self.hallway_cb, 10)
+        self.scan_sub = self.create_subscription(LaserScan, '/robot4/scan', self.scan_cb, 10)
+
+        self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
         self.sound_pub = self.create_publisher(AudioNoteVector, "/robot4/cmd_audio", 2)
         self.light_pub = self.create_publisher(String, "/light_state", 10)
         
@@ -80,6 +86,21 @@ class DodgeNode(Node):
             self.get_logger().info("Person no longer detected -- arcing left.")
             self.phase = self.ARC_LEFT
             self.dodge_timer = self.create_timer(self.ARC_DURATION, self.begin_right, callback_group=self.dodge_callback_group)
+    
+    def scan_cb(self, msg):
+        front_ranges = msg.ranges[200:340]
+        min = msg.range_min
+        max = msg.range_max
+        for distance in front_ranges:
+            if distance <= min or distance >= max:
+                continue
+
+            if distance < self.OBS_THRESH:
+                self.OBSTACLE_DETECTED = True
+                self.get_logger().warn("Obstacle detected -- stopping movement.")
+                break
+            else:
+                self.OBSTACLE_DETECTED = False
 
     # ================================================================================
     # LIGHTS
@@ -164,13 +185,16 @@ class DodgeNode(Node):
     def control_loop(self):
         twist = Twist()
         twist.linear.x = self.FORWARD_SPD       # always rolling forward
-
         if self.phase == self.ARC_RIGHT:
             twist.angular.z = -self.TURN_RATE   # curve right, around the person
         elif self.phase == self.ARC_LEFT:
             twist.angular.z = self.TURN_RATE    # equal/opposite curve back to original heading
         else:
             twist.angular.z = 0.0               # straight down the hallway
+
+        if self.OBSTACLE_DETECTED:
+            twist.linear.x = 0.0
+            twist.angular.z = 0.0
 
         self.publisher.publish(twist)
 

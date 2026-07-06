@@ -6,6 +6,8 @@ from geometry_msgs.msg import Twist
 from irobot_create_msgs.msg import AudioNote, AudioNoteVector
 from builtin_interfaces.msg import Duration
 from std_msgs.msg import String
+from rclpy.qos import qos_profile_sensor_data
+from sensor_msgs.msg import LaserScan
 
 class Wave(Node):
     def __init__(self):
@@ -28,6 +30,8 @@ class Wave(Node):
         self.CONF_THRESH = 0.75         # min confidence
         self.TRIGGER_HEIGHT = 70        # bbox_height that starts the wave
 
+        self.OBSTACLE_DETECTED = False              # stop movement if obstacle detected
+        self.OBS_THRESH = 0.5                       # m, distance to obstacle that triggers stop
         self.PERSON_DETECTED = False
 
         self.WAVING = False
@@ -38,6 +42,7 @@ class Wave(Node):
         self.sound_pub = self.create_publisher(AudioNoteVector, "/robot4/cmd_audio", 2)
         self.ack_sub = self.create_subscription(HallwayAck, '/robot4/hallway_ack', self.hallway_cb, 10)
         self.light_pub = self.create_publisher(String, "/light_state", 10)
+        self.scan_sub = self.create_subscription(LaserScan, '/robot4/scan', self.scan_cb, 10)
 
         self.timer = self.create_timer(0.1, self.loop)
     
@@ -144,7 +149,7 @@ class Wave(Node):
     def loop(self):
         twist = Twist()
         twist.linear.x = 0.5
-        if self.PERSON_DETECTED or self.WAVING:
+        if self.PERSON_DETECTED or self.WAVING or self.OBSTACLE_DETECTED:
             twist.linear.x = 0.0
 
         self.publisher.publish(twist)

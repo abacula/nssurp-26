@@ -5,15 +5,17 @@ from yolo_msgs.msg import HallwayAck
 from irobot_create_msgs.msg import AudioNote, AudioNoteVector
 from builtin_interfaces.msg import Duration
 from std_msgs.msg import String
+from rclpy.qos import qos_profile_sensor_data
+from sensor_msgs.msg import LaserScan
 
 
 class SlowdownMovement(Node):
     def __init__(self):
         super().__init__('slow_node')
 
-        self.SOUND = False               # do we want sounds
-        self.SPOKE = False              # have we already spoken
-        self.LIGHTS = False              # do we want lights
+        self.SOUND = False                          # do we want sounds
+        self.SPOKE = False                          # have we already spoken
+        self.LIGHTS = False                         # do we want lights
 
         self.FORWARD_LIGHTS = "instant 85 1"                 # light state when moving at normal speed
         self.SLOW_LIGHTS = "fade 5 42 5"                     # light state when moving at slow speed
@@ -25,10 +27,14 @@ class SlowdownMovement(Node):
         
         self.CURR_SPEED = 0.0           
 
+        self.OBSTACLE_DETECTED = False              # stop movement if obstacle detected
+        self.OBS_THRESH = 0.5                       # m, distance to obstacle that triggers stop
+
         self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
         self.ack_sub = self.create_subscription(HallwayAck, '/robot4/hallway_ack', self.hallway_cb, 10)
         self.sound_pub = self.create_publisher(AudioNoteVector, "/robot4/cmd_audio", 2)
         self.light_pub = self.create_publisher(String, "/light_state", 10)
+        self.scan_sub = self.create_subscription(LaserScan, '/robot4/scan', self.scan_cb, 10)
 
     def hallway_cb(self, msg):
         twist = Twist()
@@ -52,8 +58,27 @@ class SlowdownMovement(Node):
         # change lights
         if self.LIGHTS:
             self.change_lights()
+            
+        if self.OBSTACLE_DETECTED:
+            twist.linear.x = 0.0
+            self.get_logger().warn("Obstacle detected -- stopping movement.")
+
         self.publisher.publish(twist)
 
+    def scan_cb(self, msg):
+        front_ranges = msg.ranges[200:340]
+        min = msg.range_min
+        max = msg.range_max
+        for distance in front_ranges:
+            if distance <= min or distance >= max:
+                continue
+
+            if distance < self.OBS_THRESH:
+                self.OBSTACLE_DETECTED = True
+                self.get_logger().warn("Obstacle detected -- stopping movement.")
+                break
+            else:
+                self.OBSTACLE_DETECTED = False
     # ================================================================================
     # LIGHTS
     # ================================================================================
