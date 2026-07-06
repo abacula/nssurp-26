@@ -72,20 +72,22 @@ class Wave(Node):
     # SOUNDS
     # ================================================================================
     def changeSound(self):
-        if self.SOUNDS:
-            audio_msg = AudioNoteVector()
-            Melody = [1174, 1318, 1568]
-            Durations = [.2, .2, .4]
-            for x in range(len(Melody)):
-                note = AudioNote()           
-                time_play = Duration()
+        
+        audio_msg = AudioNoteVector()
+        Melody = [1174, 1318, 1568]
+        Durations = [.2, .2, .4]
+        for x in range(len(Melody)):
+            note = AudioNote()           
+            time_play = Duration()
     
-                time_play.nanosec = int(Durations[x] * 1000000000) # val * 1 second
-                note.max_runtime = time_play
-                note.frequency = Melody[x]
+            time_play.nanosec = int(Durations[x] * 1000000000) # val * 1 second
+            note.max_runtime = time_play
+            note.frequency = Melody[x]
 
-                audio_msg.append = True
-                audio_msg.notes.append(note)
+            audio_msg.append = True
+            audio_msg.notes.append(note)
+
+        if self.sound:
             self.sound_pub.publish(audio_msg)
 
     # ================================================================================
@@ -138,25 +140,6 @@ class Wave(Node):
 
         time.sleep(0.5)
         self.waving = False
-
-    def changeSound(self):
-        
-        audio_msg = AudioNoteVector()
-        Melody = [1174, 1318, 1568]
-        Durations = [.2, .2, .4]
-        for x in range(len(Melody)):
-            note = AudioNote()           
-            time_play = Duration()
-    
-            time_play.nanosec = int(Durations[x] * 1000000000) # val * 1 second
-            note.max_runtime = time_play
-            note.frequency = Melody[x]
-
-            audio_msg.append = True
-            audio_msg.notes.append(note)
-
-        if self.sound:
-            self.sound_pub.publish(audio_msg)
 
     def loop(self):
         twist = Twist()
