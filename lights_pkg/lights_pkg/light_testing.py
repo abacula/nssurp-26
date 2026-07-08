@@ -24,11 +24,11 @@ class LightTest(Node):
 
         while True:
             light_msg = String()
-            light_msg.data = "fadeTo 1 0 255 1"
+            light_msg.data = "adawdawd"
             self.light_pub.publish(light_msg)
             self.get_logger().info("Light State Published: %s" % light_msg.data)
             time.sleep(10.0)
-            light_msg.data = "pulse 1 85 2"
+            light_msg.data = "awdawdawd"
             self.light_pub.publish(light_msg)
             self.get_logger().info("Light State Published: %s" % light_msg.data)
             time.sleep(10.0)

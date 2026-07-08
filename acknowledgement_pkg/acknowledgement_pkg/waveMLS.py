@@ -11,15 +11,6 @@ from sensor_msgs.msg import LaserScan
 
 class Wave(Node):
     def __init__(self):
-
-        self.person_detected = False
-        self.speed = 0.5
-        self.waving = False
-        self.waved = False
-        self.lights = False
-        self.sound = False
-
-        # Change to have your node name
         super().__init__('wave_node_MLS')
 
         self.LIGHTS = True                     # do we want lights
@@ -30,9 +21,9 @@ class Wave(Node):
         self.CONF_THRESH = 0.75         # min confidence
         self.TRIGGER_HEIGHT = 70        # bbox_height that starts the wave
 
+        self.PERSON_DETECTED = False
         self.OBSTACLE_DETECTED = False              # stop movement if obstacle detected
         self.OBS_THRESH = 0.5                       # m, distance to obstacle that triggers stop
-        self.PERSON_DETECTED = False
 
         self.WAVING = False
         self.WAVED = False
@@ -61,13 +52,28 @@ class Wave(Node):
         else:
             self.PERSON_DETECTED = False
 
+    def scan_cb(self, msg):
+        front_ranges = msg.ranges[200:340]
+        min = msg.range_min
+        max = msg.range_max
+        for distance in front_ranges:
+            if distance <= min or distance >= max:
+                continue
+
+            if distance < self.OBS_THRESH:
+                self.OBSTACLE_DETECTED = True
+                self.get_logger().warn("Obstacle detected -- stopping movement.")
+                break
+            else:
+                self.OBSTACLE_DETECTED = False
+
     # ================================================================================
     # LIGHTS
     # ================================================================================
     def change_light_state(self):
         light_msg = String()
         if self.WAVING:
-            light_msg.data = "rainbow 10"
+            light_msg.data = "fade 5 42 5"
         else:
             light_msg.data = "instant 85 1"
 
@@ -77,22 +83,20 @@ class Wave(Node):
     # SOUNDS
     # ================================================================================
     def changeSound(self):
-        
-        audio_msg = AudioNoteVector()
-        Melody = [1174, 1318, 1568]
-        Durations = [.2, .2, .4]
-        for x in range(len(Melody)):
-            note = AudioNote()           
-            time_play = Duration()
+        if self.SOUNDS:
+            audio_msg = AudioNoteVector()
+            Melody = [1174, 1318, 1568]
+            Durations = [.2, .2, .4]
+            for x in range(len(Melody)):
+                note = AudioNote()           
+                time_play = Duration()
     
-            time_play.nanosec = int(Durations[x] * 1000000000) # val * 1 second
-            note.max_runtime = time_play
-            note.frequency = Melody[x]
+                time_play.nanosec = int(Durations[x] * 1000000000) # val * 1 second
+                note.max_runtime = time_play
+                note.frequency = Melody[x]
 
-            audio_msg.append = True
-            audio_msg.notes.append(note)
-
-        if self.sound:
+                audio_msg.append = True
+                audio_msg.notes.append(note)
             self.sound_pub.publish(audio_msg)
 
     # ================================================================================
@@ -144,7 +148,11 @@ class Wave(Node):
         self.publisher.publish(twist)
 
         time.sleep(0.5)
-        self.waving = False
+
+        # done waving, reset state
+        self.WAVING = False
+        self.change_light_state()
+
 
     def loop(self):
         twist = Twist()
