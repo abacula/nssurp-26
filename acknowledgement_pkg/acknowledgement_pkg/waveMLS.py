@@ -142,14 +142,13 @@ class Wave(Node):
         # Turn right
         twist.angular.z = -0.5
         self.publisher.publish(twist)
-        time.sleep(0.5)
+        time.sleep(0.75)
         
         twist.angular.z = 0.0
         self.publisher.publish(twist)
 
-        time.sleep(0.5)
-
         # done waving, reset state
+        time.sleep(0.5)
         self.WAVING = False
         self.change_light_state()
 
