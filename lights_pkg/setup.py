@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'light_test=lights_pkg.light_testing:main',
+            'kill_lights=lights_pkg.kill_lights:main',
         ],
     },
 )

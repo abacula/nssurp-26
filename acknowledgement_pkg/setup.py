@@ -37,6 +37,8 @@ setup(
             'avoid_node=acknowledgement_pkg.avoid:main',
             'lia_sound_node=acknowledgement_pkg.lia_sound:main',
             'plain_node=acknowledgement_pkg.plain:main',
+            'battery_node=acknowledgement_pkg.battery:main',
+            'plain_odom=acknowledgement_pkg.plain_odom:main',
         ],
     },
 )

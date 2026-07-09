@@ -7,6 +7,8 @@ from builtin_interfaces.msg import Duration
 from std_msgs.msg import String
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan
+from nav_msgs.msg import Odometry
+from tf_transformations import euler_from_quaternion
 
 
 class SlowdownMovement(Node):
@@ -25,6 +27,12 @@ class SlowdownMovement(Node):
         self.CONF_THRESH = 0.0                             # min confidence
         self.TRIGGER_HEIGHT = 75                           # bbox_height that starts the slowdown
         
+        self.ANG_THRESH = 0.02                       # rad, angle that triggers stop
+        self.PI = 3.141592653589793
+        self.ANG = 0
+        self.ANG_OFFSET = 0
+        self.GOT_OFFSET = False
+
         self.CURR_SPEED = 0.0           
 
         self.OBSTACLE_DETECTED = False              # stop movement if obstacle detected
@@ -35,6 +43,7 @@ class SlowdownMovement(Node):
         self.sound_pub = self.create_publisher(AudioNoteVector, "/robot4/cmd_audio", 2)
         self.light_pub = self.create_publisher(String, "/light_state", 10)
         self.scan_sub = self.create_subscription(LaserScan, '/robot4/scan', self.scan_cb, 10)
+        self.odom_sub = self.create_subscription(Odometry, '/robot4/odom', self.odom_cb, 10)
 
     def hallway_cb(self, msg):
         twist = Twist()
@@ -54,7 +63,17 @@ class SlowdownMovement(Node):
             self.get_logger().info("No person detected -- keep moving.")
             twist.linear.x = self.FORWARD_SPD # keep moving at normal speed
 
+        if self.ANG > self.ANG_THRESH:
+            twist.angular.z = -0.15
+            self.get_logger().info("Turning right to correct orientation.")
+        elif self.ANG < -self.ANG_THRESH:
+            twist.angular.z = 0.15
+            self.get_logger().info("Turning left to correct orientation.")
+        else:
+            self.get_logger().info(str(round(self.ANG,3)))
+
         self.CURR_SPEED = twist.linear.x
+        
         # change lights
         if self.LIGHTS:
             self.change_lights()
@@ -62,6 +81,9 @@ class SlowdownMovement(Node):
         if self.OBSTACLE_DETECTED:
             twist.linear.x = 0.0
             self.get_logger().warn("Obstacle detected -- stopping movement.")
+        elif self.GOT_OFFSET is False:
+            twist.linear.x = 0.0
+            self.get_logger().warn("Waiting for odometry to be set.")
 
         self.publisher.publish(twist)
 

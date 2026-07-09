@@ -10,6 +10,8 @@ from std_msgs.msg import String
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan
 import time
+from nav_msgs.msg import Odometry
+from tf_transformations import euler_from_quaternion
 
 class DodgeNode(Node):
     # phases
@@ -31,9 +33,15 @@ class DodgeNode(Node):
         self.ARC_DURATION = 2.5         # s, time spent in EACH arc
 
         self.CONF_THRESH = 0.0          # min confidence
-        self.TRIGGER_HEIGHT = 70        # bbox_height that starts the dodge
+        self.TRIGGER_HEIGHT = 65        # bbox_height that starts the dodge
         self.OBSTACLE_DETECTED = False  # stop movement if obstacle detected
         self.OBS_THRESH = 0.5           # m, distance to obstacle that triggers stop
+
+        self.ANG_THRESH = 0.02                       # rad, angle that triggers stop
+        self.PI = 3.141592653589793
+        self.ANG = 0
+        self.ANG_OFFSET = 0
+        self.GOT_OFFSET = False
 
         self.control_callback_group = MutuallyExclusiveCallbackGroup()
         self.dodge_callback_group = MutuallyExclusiveCallbackGroup()
@@ -46,6 +54,7 @@ class DodgeNode(Node):
         # pubs and subs
         self.ack_sub = self.create_subscription(HallwayAck, '/robot4/hallway_ack', self.hallway_cb, 10)
         self.scan_sub = self.create_subscription(LaserScan, '/robot4/scan', self.scan_cb, 10)
+        self.odom_sub = self.create_subscription(Odometry, '/robot4/odom', self.odom_cb, 10)
 
         self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
         self.sound_pub = self.create_publisher(AudioNoteVector, "/robot4/cmd_audio", 2)
@@ -101,6 +110,22 @@ class DodgeNode(Node):
                 break
             else:
                 self.OBSTACLE_DETECTED = False
+
+    def odom_cb(self, msg):
+        quaternion = msg.pose.pose.orientation
+         # Angle converted from quaternion to euler
+        (_,_,ang) = euler_from_quaternion([quaternion.x, quaternion.y, quaternion.z, quaternion.w])
+
+        if self.GOT_OFFSET is False:
+            self.ANG_OFFSET = -ang
+            self.GOT_OFFSET = True
+
+        ang += self.ANG_OFFSET
+        
+        if ang < -self.PI:
+            self.ANG = ang + (2*self.PI)
+        else:
+            self.ANG = ang
 
     # ================================================================================
     # LIGHTS
@@ -190,11 +215,21 @@ class DodgeNode(Node):
         elif self.phase == self.ARC_LEFT:
             twist.angular.z = self.TURN_RATE    # equal/opposite curve back to original heading
         else:
-            twist.angular.z = 0.0               # straight down the hallway
+            if self.ANG > self.ANG_THRESH:
+                twist.angular.z = -0.15
+                self.get_logger().info("Turning right to correct orientation.")
+            elif self.ANG < -self.ANG_THRESH:
+                twist.angular.z = 0.15
+                self.get_logger().info("Turning left to correct orientation.")
+            else:
+                self.get_logger().info(str(round(self.ANG,3)))
 
         if self.OBSTACLE_DETECTED:
             twist.linear.x = 0.0
             twist.angular.z = 0.0
+        elif self.GOT_OFFSET is False:
+            twist.linear.x = 0.0
+            self.get_logger().info("Waiting for odometry offset to be set.")
 
         self.publisher.publish(twist)
 
