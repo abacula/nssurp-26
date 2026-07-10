@@ -35,7 +35,7 @@ class DodgeNodeMLS(Node):
         self.CONF_THRESH = 0.0          # min confidence
         self.TRIGGER_HEIGHT = 65        # bbox_height that starts the dodge
         self.OBSTACLE_DETECTED = False  # stop movement if obstacle detected
-        self.OBS_THRESH = 0.5           # m, distance to obstacle that triggers stop
+        self.OBS_THRESH = 0.75           # m, distance to obstacle that triggers stop
 
         self.ANG_THRESH = 0.02                       # rad, angle that triggers stop
         self.PI = 3.141592653589793
@@ -97,6 +97,7 @@ class DodgeNodeMLS(Node):
             self.dodge_timer = self.create_timer(self.ARC_DURATION, self.begin_right, callback_group=self.dodge_callback_group)
     
     def scan_cb(self, msg):
+        self.OBSTACLE_DETECTED = False
         front_ranges = msg.ranges[200:340]
         min = msg.range_min
         max = msg.range_max
@@ -108,8 +109,6 @@ class DodgeNodeMLS(Node):
                 self.OBSTACLE_DETECTED = True
                 self.get_logger().warn("Obstacle detected -- stopping movement.")
                 break
-            else:
-                self.OBSTACLE_DETECTED = False
 
     def odom_cb(self, msg):
         quaternion = msg.pose.pose.orientation

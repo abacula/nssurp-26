@@ -35,7 +35,7 @@ class DodgeNode(Node):
         self.CONF_THRESH = 0.0          # min confidence
         self.TRIGGER_HEIGHT = 65        # bbox_height that starts the dodge
         self.OBSTACLE_DETECTED = False  # stop movement if obstacle detected
-        self.OBS_THRESH = 0.5           # m, distance to obstacle that triggers stop
+        self.OBS_THRESH = 0.75           # m, distance to obstacle that triggers stop
 
         self.ANG_THRESH = 0.02                       # rad, angle that triggers stop
         self.PI = 3.141592653589793

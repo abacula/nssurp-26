@@ -36,7 +36,7 @@ class SlowdownMovementMLS(Node):
         self.CURR_SPEED = 0.0           
 
         self.OBSTACLE_DETECTED = False              # stop movement if obstacle detected
-        self.OBS_THRESH = 0.5                       # m, distance to obstacle that triggers stop
+        self.OBS_THRESH = 0.75                       # m, distance to obstacle that triggers stop
 
         self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
         self.ack_sub = self.create_subscription(HallwayAck, '/robot4/hallway_ack', self.hallway_cb, 10)

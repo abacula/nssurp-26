@@ -25,7 +25,7 @@ class WaveMLS(Node):
 
         self.PERSON_DETECTED = False
         self.OBSTACLE_DETECTED = False              # stop movement if obstacle detected
-        self.OBS_THRESH = 0.5                       # m, distance to obstacle that triggers stop
+        self.OBS_THRESH = 0.75                       # m, distance to obstacle that triggers stop
         
         self.ANG_THRESH = 0.02                       # rad, angle that triggers stop
         self.PI = 3.141592653589793
@@ -63,6 +63,7 @@ class WaveMLS(Node):
             self.PERSON_DETECTED = False
 
     def scan_cb(self, msg):
+        self.OBSTACLE_DETECTED = False
         front_ranges = msg.ranges[200:340]
         min = msg.range_min
         max = msg.range_max
@@ -74,8 +75,6 @@ class WaveMLS(Node):
                 self.OBSTACLE_DETECTED = True
                 self.get_logger().warn("Obstacle detected -- stopping movement.")
                 break
-            else:
-                self.OBSTACLE_DETECTED = False
 
     def odom_cb(self, msg):
         quaternion = msg.pose.pose.orientation
