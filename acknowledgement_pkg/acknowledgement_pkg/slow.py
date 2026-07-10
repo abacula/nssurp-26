@@ -101,6 +101,23 @@ class SlowdownMovement(Node):
                 break
             else:
                 self.OBSTACLE_DETECTED = False
+                
+    def odom_cb(self, msg):
+        quaternion = msg.pose.pose.orientation
+         # Angle converted from quaternion to euler
+        (_,_,ang) = euler_from_quaternion([quaternion.x, quaternion.y, quaternion.z, quaternion.w])
+
+        if self.GOT_OFFSET is False:
+            self.ANG_OFFSET = -ang
+            self.GOT_OFFSET = True
+
+        ang += self.ANG_OFFSET
+        
+        if ang < -self.PI:
+            self.ANG = ang + (2*self.PI)
+        else:
+            self.ANG = ang
+
     # ================================================================================
     # LIGHTS
     # ================================================================================

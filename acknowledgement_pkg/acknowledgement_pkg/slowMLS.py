@@ -7,9 +7,11 @@ from builtin_interfaces.msg import Duration
 from std_msgs.msg import String
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan
+from nav_msgs.msg import Odometry
+from tf_transformations import euler_from_quaternion
 
 
-class SlowdownMovement(Node):
+class SlowdownMovementMLS(Node):
     def __init__(self):
         super().__init__('slow_node_MLS')
 
@@ -23,8 +25,14 @@ class SlowdownMovement(Node):
         self.FORWARD_SPD = 0.5                             # m/s
         self.SLOW_SPEED = self.FORWARD_SPD / 2             # m/s
         self.CONF_THRESH = 0.0                             # min confidence
-        self.TRIGGER_HEIGHT = 75                           # bbox_height that starts the slowdown
+        self.TRIGGER_HEIGHT = 70                           # bbox_height that starts the slowdown
         
+        self.ANG_THRESH = 0.02                       # rad, angle that triggers stop
+        self.PI = 3.141592653589793
+        self.ANG = 0
+        self.ANG_OFFSET = 0
+        self.GOT_OFFSET = False
+
         self.CURR_SPEED = 0.0           
 
         self.OBSTACLE_DETECTED = False              # stop movement if obstacle detected
@@ -35,6 +43,7 @@ class SlowdownMovement(Node):
         self.sound_pub = self.create_publisher(AudioNoteVector, "/robot4/cmd_audio", 2)
         self.light_pub = self.create_publisher(String, "/light_state", 10)
         self.scan_sub = self.create_subscription(LaserScan, '/robot4/scan', self.scan_cb, 10)
+        self.odom_sub = self.create_subscription(Odometry, '/robot4/odom', self.odom_cb, 10)
 
     def hallway_cb(self, msg):
         twist = Twist()
@@ -54,7 +63,17 @@ class SlowdownMovement(Node):
             self.get_logger().info("No person detected -- keep moving.")
             twist.linear.x = self.FORWARD_SPD # keep moving at normal speed
 
+        if self.ANG > self.ANG_THRESH:
+            twist.angular.z = -0.15
+            self.get_logger().info("Turning right to correct orientation.")
+        elif self.ANG < -self.ANG_THRESH:
+            twist.angular.z = 0.15
+            self.get_logger().info("Turning left to correct orientation.")
+        else:
+            self.get_logger().info(str(round(self.ANG,3)))
+
         self.CURR_SPEED = twist.linear.x
+        
         # change lights
         if self.LIGHTS:
             self.change_lights()
@@ -62,6 +81,9 @@ class SlowdownMovement(Node):
         if self.OBSTACLE_DETECTED:
             twist.linear.x = 0.0
             self.get_logger().warn("Obstacle detected -- stopping movement.")
+        elif self.GOT_OFFSET is False:
+            twist.linear.x = 0.0
+            self.get_logger().warn("Waiting for odometry to be set.")
 
         self.publisher.publish(twist)
 
@@ -79,6 +101,23 @@ class SlowdownMovement(Node):
                 break
             else:
                 self.OBSTACLE_DETECTED = False
+
+    def odom_cb(self, msg):
+        quaternion = msg.pose.pose.orientation
+         # Angle converted from quaternion to euler
+        (_,_,ang) = euler_from_quaternion([quaternion.x, quaternion.y, quaternion.z, quaternion.w])
+
+        if self.GOT_OFFSET is False:
+            self.ANG_OFFSET = -ang
+            self.GOT_OFFSET = True
+
+        ang += self.ANG_OFFSET
+        
+        if ang < -self.PI:
+            self.ANG = ang + (2*self.PI)
+        else:
+            self.ANG = ang
+    
     # ================================================================================
     # LIGHTS
     # ================================================================================
@@ -110,19 +149,9 @@ class SlowdownMovement(Node):
 
         self.sound_pub.publish(audio_msg)
 
-    # # ================================================================================
-    # # SPEED CALCULATION
-    # # ================================================================================
-    # def get_speed(self, box_height, max_speed = 0.5, min_speed=0.05):
-    #     # (self.TRIGGER_HEIGHT) / (box_height*1.35) # 0.0 (close) to 1.0 (far) # (old speed ratio calculation)
-    #     # return float(min_speed + ratio * (max_speed - min_speed))
-        
-    #     speed = self.FORWARD_SPD / 2
-    #     return speed 
-
 def main(args=None):
     rclpy.init(args=args)
-    node = SlowdownMovement()
+    node = SlowdownMovementMLS()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
