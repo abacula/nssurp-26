@@ -88,6 +88,7 @@ class SlowdownMovementMLS(Node):
         self.publisher.publish(twist)
 
     def scan_cb(self, msg):
+        self.OBSTACLE_DETECTED = False
         front_ranges = msg.ranges[200:340]
         min = msg.range_min
         max = msg.range_max
@@ -99,8 +100,8 @@ class SlowdownMovementMLS(Node):
                 self.OBSTACLE_DETECTED = True
                 self.get_logger().warn("Obstacle detected -- stopping movement.")
                 break
-            else:
-                self.OBSTACLE_DETECTED = False
+        
+                
 
     def odom_cb(self, msg):
         quaternion = msg.pose.pose.orientation
