@@ -39,6 +39,7 @@ setup(
             'plain_node=acknowledgement_pkg.plain:main',
             'battery_node=acknowledgement_pkg.battery:main',
             'plain_odom=acknowledgement_pkg.plain_odom:main',
+            'laser_scan_writer=acknowledgement_pkg.LaserScanWriter:main',
         ],
     },
 )

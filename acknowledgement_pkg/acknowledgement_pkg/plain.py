@@ -18,7 +18,7 @@ class Plain(Node):
         self.SPEED = 0.5                            # m/s
 
         self.OBSTACLE_DETECTED = False              # stop movement if obstacle detected
-        self.OBS_THRESH = 0.75                       # m, distance to obstacle that triggers stop
+        self.OBS_THRESH = 0.5                       # m, distance to obstacle that triggers stop
 
         self.ANG_THRESH = 0.02                       # rad, angle that triggers stop
         self.PI = 3.141592653589793
@@ -50,15 +50,16 @@ class Plain(Node):
         self.publisher.publish(twist)
 
     def scan_cb(self, msg):
-        front_ranges = msg.ranges[220:340]
+        self.get_logger().info(str(len(msg.ranges)))
+        self.OBSTACLE_DETECTED = False
+        front_ranges = msg.ranges[100:260]
         min = msg.range_min
         max = msg.range_max
         for distance in front_ranges:
-            if distance < self.OBS_THRESH and distance > min and distance < max:
-                self.OBSTACLE_DETECTED = True
-                return
-
-        self.OBSTACLE_DETECTED = False
+            if distance > min or distance < max:
+                if distance < self.OBS_THRESH:
+                    self.OBSTACLE_DETECTED = True
+                    self.get_logger().warn("Obstacle detected -- stopping movement.")
 
     def odom_cb(self, msg):
         quaternion = msg.pose.pose.orientation

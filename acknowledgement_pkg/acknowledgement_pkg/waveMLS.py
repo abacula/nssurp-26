@@ -68,13 +68,11 @@ class WaveMLS(Node):
         min = msg.range_min
         max = msg.range_max
         for distance in front_ranges:
-            if distance <= min or distance >= max:
-                continue
-
-            if distance < self.OBS_THRESH:
-                self.OBSTACLE_DETECTED = True
-                self.get_logger().warn("Obstacle detected -- stopping movement.")
-                break
+            if distance > min or distance < max:
+                if distance < self.OBS_THRESH:
+                    self.OBSTACLE_DETECTED = True
+                    self.get_logger().warn("Obstacle detected -- stopping movement.")
+                    
 
     def odom_cb(self, msg):
         quaternion = msg.pose.pose.orientation
