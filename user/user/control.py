@@ -11,9 +11,9 @@ from nav_msgs.msg import Odometry
 from tf_transformations import euler_from_quaternion
 
 
-class Plain(Node):
+class Control(Node):
     def __init__(self):
-        super().__init__('plain_node')
+        super().__init__('control')
 
         self.SPEED = 0.5                            # m/s
 
@@ -79,9 +79,7 @@ class Plain(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    
-    node = Plain()
-
+    node = Control()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
