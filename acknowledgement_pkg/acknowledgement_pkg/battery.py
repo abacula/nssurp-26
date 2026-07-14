@@ -14,7 +14,7 @@ class Battery(Node):
         self.led_publish = self.create_publisher(LightringLeds, '/robotN/cmd_lightring', qos_profile_sensor_data)
 
     def callback(self, msg):
-        battery_percentage = msg.percentage * 100
+        battery_percentage = msg.percentage * 100.0
         
         if battery_percentage < 20:
             self.get_logger().warn(f'Battery percentage is {battery_percentage:.2f}% !!')
