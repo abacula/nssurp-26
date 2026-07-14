@@ -25,7 +25,7 @@ class Wave(Node):
 
         self.PERSON_DETECTED = False
         self.OBSTACLE_DETECTED = False              # stop movement if obstacle detected
-        self.OBS_THRESH = 0.75                       # m, distance to obstacle that triggers stop
+        self.OBS_THRESH = 0.65                       # m, distance to obstacle that triggers stop
         
         self.ANG_THRESH = 0.02                       # rad, angle that triggers stop
         self.PI = 3.141592653589793
@@ -63,18 +63,16 @@ class Wave(Node):
             self.PERSON_DETECTED = False
 
     def scan_cb(self, msg):
+        self.get_logger().info(str(len(msg.ranges)))
         self.OBSTACLE_DETECTED = False
-        front_ranges = msg.ranges[200:340]
+        front_ranges = msg.ranges[135:225]
         min = msg.range_min
         max = msg.range_max
         for distance in front_ranges:
-            if distance <= min or distance >= max:
-                continue
-
-            if distance < self.OBS_THRESH:
-                self.OBSTACLE_DETECTED = True
-                self.get_logger().warn("Obstacle detected -- stopping movement.")
-                break
+            if distance > min or distance < max:
+                if distance < self.OBS_THRESH:
+                    self.OBSTACLE_DETECTED = True
+                    self.get_logger().warn("Obstacle detected -- stopping movement.")
 
     def odom_cb(self, msg):
         quaternion = msg.pose.pose.orientation
@@ -96,13 +94,14 @@ class Wave(Node):
     # LIGHTS
     # ================================================================================
     def change_light_state(self):
-        light_msg = String()
-        if self.WAVING:
-            light_msg.data = "fade 5 42 5"
-        else:
-            light_msg.data = "instant 85 1"
+        if self.LIGHTS:
+            light_msg = String()
+            if self.WAVING:
+                light_msg.data = "fade 5 42 5"
+            else:
+                light_msg.data = "instant 85 1"
 
-        self.light_pub.publish(light_msg)
+            self.light_pub.publish(light_msg)
 
     # ================================================================================
     # SOUNDS

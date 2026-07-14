@@ -36,7 +36,7 @@ class SlowdownMovement(Node):
         self.CURR_SPEED = 0.0           
 
         self.OBSTACLE_DETECTED = False              # stop movement if obstacle detected
-        self.OBS_THRESH = 0.75                       # m, distance to obstacle that triggers stop
+        self.OBS_THRESH = 0.65                       # m, distance to obstacle that triggers stop
 
         self.publisher = self.create_publisher(Twist, '/robot4/cmd_vel_unstamped', 10)
         self.ack_sub = self.create_subscription(HallwayAck, '/robot4/hallway_ack', self.hallway_cb, 10)
@@ -88,18 +88,16 @@ class SlowdownMovement(Node):
         self.publisher.publish(twist)
 
     def scan_cb(self, msg):
+        self.get_logger().info(str(len(msg.ranges)))
         self.OBSTACLE_DETECTED = False
-        front_ranges = msg.ranges[200:340]
+        front_ranges = msg.ranges[135:225]
         min = msg.range_min
         max = msg.range_max
         for distance in front_ranges:
-            if distance <= min or distance >= max:
-                continue
-
-            if distance < self.OBS_THRESH:
-                self.OBSTACLE_DETECTED = True
-                self.get_logger().warn("Obstacle detected -- stopping movement.")
-                break
+            if distance > min or distance < max:
+                if distance < self.OBS_THRESH:
+                    self.OBSTACLE_DETECTED = True
+                    self.get_logger().warn("Obstacle detected -- stopping movement.")
                 
     def odom_cb(self, msg):
         quaternion = msg.pose.pose.orientation
