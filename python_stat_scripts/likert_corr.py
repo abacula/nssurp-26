@@ -53,14 +53,20 @@ for q in trial["question"]:
 
 t_as_nums = []
 for t in trial["Trial"]:
-    if t == 'invasive-respectful':
-        q_as_nums.append(1)
-    elif q == 'unfriendly-friendly':
-        q_as_nums.append(2)
-    elif q == 'dangerous-safe':
-        q_as_nums.append(3)
-    elif q == 'ignored-seen':
-        q_as_nums.append(4)
+    if t == 'control':
+        t_as_nums.append(0)
+    elif t == 's_mo':
+        t_as_nums.append(11)
+    elif t == 'd_mo':
+        t_as_nums.append(12)
+    elif t == 'w_mo':
+        t_as_nums.append(13)
+       elif t == 's_mls':
+        t_as_nums.append(21)
+    elif t == 'd_mls':
+        t_as_nums.append(22)
+    elif t == 'w_mls':
+        t_as_nums.append(23)
 
 
 trial["question"] = q_as_nums
