@@ -61,7 +61,7 @@ for t in trial["Trial"]:
         t_as_nums.append(12)
     elif t == 'w_mo':
         t_as_nums.append(13)
-       elif t == 's_mls':
+    elif t == 's_mls':
         t_as_nums.append(21)
     elif t == 'd_mls':
         t_as_nums.append(22)
@@ -70,6 +70,7 @@ for t in trial["Trial"]:
 
 
 trial["question"] = q_as_nums
+trial["Trial"] = t_as_nums
 print(trial)
 
 corrs = trial.corr()
