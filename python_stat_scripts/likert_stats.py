@@ -27,7 +27,17 @@ trial = pd.read_csv(CSV)
 trial = trial.dropna(subset=["question"])
 
 # condition cols
-trial_labels = ["control", "s_mo", "d_mo", "w_mo", "s_mls", "d_mls", "w_mls"]
+adj = input("Adjusted data based on control? y/n ")
+if adj=="y":
+    trial_labels = ["s_mo_adj", "d_mo_adj", "w_mo_adj", "s_mls_adj", "d_mls_adj", "w_mls_adj"]
+else:
+    avg = input("Just avg? y/n ")
+    if avg=="y":
+        trial_labels = ["control", "mo_avg", "mls_avg"]
+    else:
+        trial_labels = ["control", "s_mo", "d_mo", "w_mo", "s_mls", "d_mls", "w_mls"]
+
+
 
 # melt data to long format
 trial = trial.melt(

@@ -26,8 +26,20 @@ print(f"Loaded: {CSV}")
 # save plots next to the CSV, not wherever the script was launched from
 OUTDIR = os.path.dirname(os.path.abspath(CSV))
 
+extra_info = ""
 # condition cols
-CONDITIONS = ["control", "s_mo", "d_mo", "w_mo", "s_mls", "d_mls", "w_mls"]
+adj = input("Adjusted data based on control? y/n ")
+if adj=="y":
+    extra_info = "_adj"
+    CONDITIONS = ["s_mo_adj", "d_mo_adj", "w_mo_adj", "s_mls_adj", "d_mls_adj", "w_mls_adj"]
+else:
+    avg = input("Just avg? y/n ")
+    if avg=="y":
+        extra_info = "_avg"
+        CONDITIONS = ["control", "mo_avg", "mls_avg"]
+    else:
+        CONDITIONS = ["control", "s_mo", "d_mo", "w_mo", "s_mls", "d_mls", "w_mls"]
+
 
 # x-axis labels
 LABELS = {
@@ -38,6 +50,14 @@ LABELS = {
     "s_mls":    "Slow\n(multimodal)",
     "d_mls":    "Dodge\n(multimodal)",
     "w_mls":    "Wave\n(multimodal)",
+    "s_mo_adj":     "Slow\n(motion)",
+    "d_mo_adj":     "Dodge\n(motion)",
+    "w_mo_adj":     "Wave\n(motion)",
+    "s_mls_adj":    "Slow\n(multimodal)",
+    "d_mls_adj":    "Dodge\n(multimodal)",
+    "w_mls_adj":    "Wave\n(multimodal)",
+    "mo_avg":   "Average (motion)",
+    "mls_avg":  "Average (multimodal)",
 }
 
 # anchor words for each question: (low end = 1, high end = 5)
@@ -88,8 +108,11 @@ for q in df["question"].unique():
     # worded y-axis, number fallback
     low, high = ANCHORS.get(q, (None, None))
     ax.set_ylim(0.5, 5.5)
-    ax.set_yticks([1, 2, 3, 4, 5])
-    if low:
+    if adj=="y":
+        ax.set_yticks([-4,-3,-2,-1,0,1,2,3,4])
+    else:
+        ax.set_yticks([1, 2, 3, 4, 5])
+    if low and adj!="y":
         ax.set_yticklabels(y_tick_labels(low, high))
     ax.set_ylabel("")
 
@@ -102,6 +125,8 @@ for q in df["question"].unique():
     ax.set_axisbelow(True)
 
     fig.tight_layout()
-    fig.savefig(os.path.join(OUTDIR, f"plot_{q}.png"), dpi=200)
+  
+    fig.savefig(os.path.join(OUTDIR, f"figs/plot_{q}{extra_info}.png"), dpi=400)
+  
 
 plt.show()
