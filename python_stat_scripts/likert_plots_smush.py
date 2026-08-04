@@ -26,38 +26,21 @@ print(f"Loaded: {CSV}")
 # save plots next to the CSV, not wherever the script was launched from
 OUTDIR = os.path.dirname(os.path.abspath(CSV))
 
-extra_info = ""
+extra_info = "smush"
 # condition cols
-adj = input("Adjusted data based on control? y/n ")
-if adj=="y":
-    extra_info = "_adj"
-    CONDITIONS = ["s_mo_adj", "d_mo_adj", "w_mo_adj", "s_mls_adj", "d_mls_adj", "w_mls_adj"]
-else:
-    avg = input("Just avg? y/n ")
-    if avg=="y":
-        extra_info = "_avg"
-        CONDITIONS = ["control", "mo_avg", "mls_avg"]
-    else:
-        CONDITIONS = ["control", "s_mo", "d_mo", "w_mo", "s_mls", "d_mls", "w_mls"]
-
+CONDITIONS = ["control", "s_all", "d_all", "w_all"]
+adj = "n"
 
 # x-axis labels
 LABELS = {
     "control":  "Control",
-    "s_mo":     "Slow\n(motion)",
-    "d_mo":     "Dodge\n(motion)",
-    "w_mo":     "Wave\n(motion)",
-    "s_mls":    "Slow\n(multi)",
-    "d_mls":    "Dodge\n(multi)",
-    "w_mls":    "Wave\n(multi)",
-    "s_mo_adj":     "Slow\n(motion)",
-    "d_mo_adj":     "Dodge\n(motion)",
-    "w_mo_adj":     "Wave\n(motion)",
-    "s_mls_adj":    "Slow\n(multimodal)",
-    "d_mls_adj":    "Dodge\n(multimodal)",
-    "w_mls_adj":    "Wave\n(multimodal)",
-    "mo_avg":   "Average\n (motion)",
-    "mls_avg":  "Average\n (multimodal)",
+    "s_all":     "Slow",
+    "d_all":     "Dodge",
+    "w_all":     "Wave",
+    "s_adj":     "Slow",
+    "d_adj":     "Dodge",
+    "w_adj":     "Wave",
+    "avg":   "Average (motion)",
 }
 
 # anchor words for each question: (low end = 1, high end = 5)
@@ -91,14 +74,11 @@ long = df.melt(
 ).dropna(subset=["rating"])
 
 # plots
-
-
 for q in df["question"].unique():
     sub = long[long["question"] == q]
 
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.tick_params(axis='both', which='major', labelsize=20, length=8, width=2)
-    sns.despine(top=True, right=True, left=True, bottom=True)
     sns.boxplot(
         x="condition", y="rating", data=sub,
         order=CONDITIONS, hue="condition", legend=False,
@@ -112,6 +92,7 @@ for q in df["question"].unique():
     # worded y-axis, number fallback
     low, high = ANCHORS.get(q, (None, None))
     ax.set_ylim(0.5, 5.5)
+    sns.despine(top=True, right=True, left=True, bottom=True)
     if adj=="y":
         ax.set_yticks([-4,-3,-2,-1,0,1,2,3,4])
     else:
@@ -122,7 +103,7 @@ for q in df["question"].unique():
 
     ax.set_xticks(range(len(CONDITIONS)))
     ax.set_xticklabels([LABELS[c] for c in CONDITIONS])
-    ax.set_xlabel("Trial Type")
+    ax.set_xlabel("Trial")
 
     #ax.set_title(f"{q} by Trial Type")
     ax.grid(axis="y", linestyle="--", alpha=0.7)
